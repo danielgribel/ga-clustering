@@ -20,7 +20,7 @@ the cardinality of each cluster (group) of the solution.
 #include "DataFrame.h"
 
 class Solver {
-	
+
 	protected:
 		
 		/*Current solution the solver is working with*/
@@ -57,6 +57,17 @@ class Solver {
 		/*Calculates the solution cost. This method is implemented through polymorphism,
 		according to how it is defined by classes that inherit Solver*/
 		virtual void calculateCost() = 0;
+
+		/*Set a new solution*/
+		void setSolution(int* newSolution);
+
+		/*Set a new data frame*/
+		void setDataFrame(DataFrame newDataFrame);
+
+		/*Check if is possible to perform a move. Possible reasons for move prohibition:
+		- The move leaves a cluster empty
+		- The move breaks some a-priori classification rule (when working with supervised classification)*/
+		bool shouldMove(std::vector<int> conflicts, int destCluster, int p);
 };
 
 #endif

@@ -32,34 +32,6 @@ double** KCenterSolver::getCentroids() const {
 	return this->centroid;
 }
 
-/*Set a new solution*/
-void KCenterSolver::setSolution(int* newSolution) {
-	this->solution = newSolution;
-}
-
-/*Set a new data frame*/
-void KCenterSolver::setDataFrame(DataFrame newDataFrame) {
-	this->dataFrame = newDataFrame;
-}
-
-/*Check if is possible to perform a move. Possible reasons for move prohibition:
-- The move leaves a cluster empty
-- The move breaks some a-priori classification rule (when working with supervised classification)*/
-bool KCenterSolver::shouldMove(std::vector<int> conflicts, int destCluster, int p) {
-	for(int q = 0; q < conflicts.size(); q++) {
-		if(this->solution[conflicts[q]] == destCluster) {
-			return false;
-		}
-	}
-
-	/*Avoid that a cluster is left empty*/
-	if(this->cardinality[solution[p]] > 1) {
-		return true;
-	}
-
-	return false;
-}
-
 /*Performs the local search. This is one of the core parts of the programm, once it performs
 local improvements in the current solution. This method is implemented through polymorphism,
 according to how it is defined by classes that inherit KCenterSolver*/

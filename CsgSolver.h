@@ -22,17 +22,6 @@ class CsgSolver: public Solver {
 		/*CsgSolver destructor*/
 		~CsgSolver();
 
-		/*Set a new solution*/
-		void setSolution(int* _solution);
-
-		/*Set a new data frame*/
-		void setDataFrame(DataFrame _dataFrame);
-
-		/*Check if is possible to perform a move. Possible reasons for move prohibition:
-		- The move leaves a cluster empty
-		- The move breaks some a-priori classification rule (when working with supervised classification)*/
-		bool shouldMove(std::vector<int> conflicts, int destCluster, int p);
-		
 		/*Get the distance of point p to every point within cluster c, i.e., the contribution of p on cluster c*/
 		double costContribution(int p, int c);
 		

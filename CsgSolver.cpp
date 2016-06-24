@@ -36,34 +36,6 @@ CsgSolver::~CsgSolver() {
 
 }
 
-/*Set a new solution*/
-void CsgSolver::setSolution(int* _solution) {
-	this->solution = _solution;
-}
-
-/*Set a new data frame*/
-void CsgSolver::setDataFrame(DataFrame _dataFrame) {
-	this->dataFrame = _dataFrame;
-}
-
-/*Check if is possible to perform a move. Possible reasons for move prohibition:
-- The move leaves a cluster empty
-- The move breaks some a-priori classification rule (when working with supervised classification)*/
-bool CsgSolver::shouldMove(std::vector<int> conflicts, int destCluster, int p) {
-	for(int q = 0; q < conflicts.size(); q++) {
-		if(this->solution[conflicts[q]] == destCluster) {
-			return false;
-		}
-	}
-
-	/*Avoid that a cluster is left empty*/
-	if(this->cardinality[solution[p]] > 1) {
-		return true;
-	}
-
-	return false;
-}
-
 /*Get the distance of point p to every point within cluster c, i.e., the contribution of p on cluster c*/
 double CsgSolver::costContribution(int p, int c) {
 	int n = this->dataFrame.getInstance().N;

@@ -30,17 +30,6 @@ class KCenterSolver: public Solver {
 
 		/*Get the list of centroids*/
 		double** getCentroids() const;
-
-		/*Set a new solution*/
-		void setSolution(int* newSolution);
-		
-		/*Set a new data frame*/
-		void setDataFrame(DataFrame newDataFrame);
-		
-		/*Check if is possible to perform a move. Possible reasons for move prohibition:
-		- The move leaves a cluster empty
-		- The move breaks some a-priori classification rule (when working with supervised classification)*/
-		bool shouldMove(std::vector<int> conflicts, int destCluster, int e);
 		
 		/*Performs the local search. This is one of the core parts of the programm, once it performs
         local improvements in the current solution. This method is implemented through polymorphism,
