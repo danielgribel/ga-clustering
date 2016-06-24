@@ -24,21 +24,31 @@
 
 using namespace std;
 
+/*Declaration of a pair of integers*/
 #define pii pair<int, int>
+
+/*Declaration of a pair of double and integer*/
 #define pdi pair<double, int>
+
+/*Declaration of a pair of double and pair of integer*/
 #define pip pair<double, pii>
+
 #define F first
+
 #define S second
+
+/*Declaration of the datasets path*/
 #define INPUT_PATH "data/"
 
 const double MAX_FLOAT = std::numeric_limits<double>::max();
+
 const double PORC_ANNOTATED = 0.0;
 
-vector< pip > similarity;
 int lastImp = 0;
 
 Solver* createSolver(DataFrame dataFrame, int* solution);
 
+/*Print a solution represented by a partitioning (array representation)*/
 void printSolution(int* solution, int n) {
 	for(int i = 0; i < n; i++) {
 		cout << solution[i] << ",";
@@ -47,14 +57,14 @@ void printSolution(int* solution, int n) {
 }
 
 double rand(int a, int b, int c, int d) {
-	int total = a+b+c+d;
-	double randIndex = 1.0*(a+d)/total;
+	int total = a + b + c + d;
+	double randIndex = 1.0*(a + d)/total;
 	return randIndex;
 }
 
 double crand(int a, int b, int c, int d) {
-	int total = a+b+c+d;
-	double crandIndex = (a - (1.0*(b+a)*(c+a))/total)/((1.0*(b+a+c+a))/2 - (1.0*(b+a)*(c+a))/total);
+	int total = a + b + c + d;
+	double crandIndex = (a - (1.0*(b + a)*(c + a))/total)/((1.0*(b + a + c + a))/2 - (1.0*(b + a)*(c + a))/total);
 	return crandIndex;
 }
 
@@ -63,7 +73,7 @@ void evalSolution(int* solution, int* label, Instance instance, string algorithm
 	int b = 0;
 	int c = 0;
 
-	// count the number of pairs that are in the same cluster under C and in the same class under C'
+	/*Count the number of pairs that are in the same cluster under C and in the same class under C'*/
 	for(int i = 0; i < instance.N; i++) {
 		for(int j = i+1; j < instance.N; j++) {
 			if( (solution[i] == solution[j]) && (label[i] == label[j]) ) {
@@ -111,6 +121,7 @@ int posInVector(vector<string> labels, string s) {
 	return pos;
 }
 
+/*Delete a matrix of dimension m (memory free)*/
 void deleteMatrix(double** matrix, int m) {
 	for(int i = 0; i < m; i++) {
 		delete [] matrix[i];
@@ -134,7 +145,6 @@ DataFrame load(Instance instance) {
 
 	vector<string> labels;
 	int pos;
-	similarity.resize(instance.N*(instance.N-1)/2);
 
 	ifstream file( (INPUT_PATH + instance.file).c_str() );
 
@@ -160,7 +170,7 @@ DataFrame load(Instance instance) {
             string val;
             getline(iss, val, instance.delimiter);
 
-            // skip id if dataset has it
+            /*Skip if dataset has ids*/
         	if((instance.hasId == true) && (col==firstColumn)) {
         		continue;
         	}
@@ -173,7 +183,7 @@ DataFrame load(Instance instance) {
             	label[row] = pos;
             }
 
-            // get attribute value
+            /*Get attribute value*/
             else {
             	data[row][j] = atof(val.c_str());
             	j++;
@@ -184,12 +194,11 @@ DataFrame load(Instance instance) {
     vector<pdi> closest;
     set<int> x;
 
-    // fill graph structure with eucledean distances between instances
+    /*Fill similarity matrix with the distances between points of dataset*/
     int k = 0;
     for(int i = 0; i < n; i++) {
     	for(int j = i+1; j < n; j++) {
     		double dist = getDistance(data[i], data[j], d);
-    		similarity[k] = pip(dist, pii(i, j));
     		sim[i][j] = dist;
     		sim[j][i] = dist;
 			k++;
@@ -197,8 +206,6 @@ DataFrame load(Instance instance) {
 			closest.push_back(pdi(dist, j));
     	}
     }
-
-    //int removed;
 
     const int numClosest = 20;
 
@@ -212,10 +219,6 @@ DataFrame load(Instance instance) {
 	DataFrame dataFrame(data, sim, label, closestObjects, instance);
 
 	return dataFrame;
-}
-
-double r2() {
-    return (double)rand()/(double)RAND_MAX;
 }
 
 void imposeConflicts(int* annotated, int* label, vector<int>* conflictGraph, int m) {
@@ -327,6 +330,7 @@ void crossoverX(int* p1, int* p2, int* offspring, int n, int m) {
 	}
 }
 
+/*Given a solution represented by a partitioning (array), convert it to a centroids representation*/
 double** solutionToCentroids(int* solution, const DataFrame dataFrame) {
     const int n = dataFrame.getInstance().N;
     const int m = dataFrame.getInstance().M;
@@ -363,6 +367,7 @@ double** solutionToCentroids(int* solution, const DataFrame dataFrame) {
     return centroid;
 }
 
+/*Given a solution represented by its centroids, convert it to a partitioning (array) representation*/
 void centroidsToSolution(int* solution, double** centroid, const DataFrame dataFrame) {    
     const int n = dataFrame.getInstance().N;
     const int m = dataFrame.getInstance().M;
@@ -400,6 +405,19 @@ double** assignment(double** c1, double** c2, int m, int d) {
     return matrix;
 }
 
+bool allClustersPopulated(int* solution, int n, int m) {
+    vector< vector<int> > v(m);
+    for(int i = 0; i < n; i++) {
+        v[solution[i]].push_back(i);
+    }
+    for(int i = 0; i < m; i++) {
+        if(v[i].size() == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void crossover(int* offspring1, int* p1, int* p2, const DataFrame dataFrame) {
     const int n = dataFrame.getInstance().N;
     const int m = dataFrame.getInstance().M;
@@ -419,20 +437,24 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame dataFrame) {
 
     int r;
 
-    for(int i = 0; i < m; i++) {
-        r = rand() % 2;
-        if(r == 0) {
-            for(int j = 0; j < d; j++) {
-                c3[i][j] = c1[i][j];
-            }
-        } else {
-            for(int j = 0; j < d; j++) {
-                c3[i][j] = c2[matching[i]][j];
+    bool validOffspring = false;
+
+    while(!validOffspring) {
+        for(int i = 0; i < m; i++) {
+            r = rand() % 2;
+            if(r == 0) {
+                for(int j = 0; j < d; j++) {
+                    c3[i][j] = c1[i][j];
+                }
+            } else {
+                for(int j = 0; j < d; j++) {
+                    c3[i][j] = c2[matching[i]][j];
+                }
             }
         }
+        centroidsToSolution(offspring1, c3, dataFrame);
+        validOffspring = allClustersPopulated(offspring1, n, m);
     }
-
-    centroidsToSolution(offspring1, c3, dataFrame);
 
     deleteMatrix(c1, m);
     deleteMatrix(c2, m);
@@ -763,14 +785,26 @@ void demo(int seed, clock_t begin) {
 }
 
 Solver* createSolver(DataFrame dataFrame, int* solution) {
-	Solver* solver = new KMeansSolver(dataFrame, solution);
+
+    /*Create a Solver instance. The object to be created must be of a class that inherit Solver*/
+	Solver* solver = new CsgSolver(dataFrame, solution);
+
 	return solver;
 }
 
 int main() {
+    
+    /*Start to count the running time*/
 	clock_t begin = clock();
-	demo(1607, begin);
+
+	/*Call the main function, which will perform the genetic loop*/
+    demo(1607, begin);
+    
+    /*Stop the running time clock*/
 	double elapsedSecs = double(clock() - begin) / CLOCKS_PER_SEC;
-	cout << elapsedSecs << endl;
-	return 0;
+	
+    /*Print the total time of execution*/
+    cout << elapsedSecs << endl;
+	
+    return 0;
 }

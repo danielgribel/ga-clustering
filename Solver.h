@@ -20,6 +20,7 @@ the cardinality of each cluster (group) of the solution.
 #include "DataFrame.h"
 
 class Solver {
+	
 	protected:
 		
 		/*Current solution the solver is working with*/

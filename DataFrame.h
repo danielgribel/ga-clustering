@@ -15,7 +15,9 @@ This header file contains the DataFrame class declaration.
 #include "Instance.h"
 
 class DataFrame {
+	
 	private:
+
 		/*Position of dataset points in the space: represented by a matrix nxd,
 		where n is the number of points and d is the number of dimensions (features) in the space*/
 		double** data;
@@ -35,6 +37,7 @@ class DataFrame {
 		Instance instance;
 
 	public:
+		
 		/*DataFrame constructor*/
 		DataFrame();
 

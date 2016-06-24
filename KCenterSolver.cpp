@@ -1,3 +1,12 @@
+/************************************************************************************
+KCenterSolver.cpp
+KCenterSolver
+
+Created by Daniel Gribel
+
+This cpp file contains the KCenterSolver class definition.
+*************************************************************************************/
+
 #include "KCenterSolver.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,27 +16,35 @@ using namespace std;
 
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
+/*KCenterSolver constructor*/
 KCenterSolver::KCenterSolver(DataFrame dataFrame, int* solution) {
 	setDataFrame(dataFrame);
 	setSolution(solution);
 }
 
+/*KCenterSolver destructor*/
 KCenterSolver::~KCenterSolver() {
 
 }
 
+/*Get the list of centroids*/
 double** KCenterSolver::getCentroids() const {
 	return this->centroid;
 }
 
+/*Set a new solution*/
 void KCenterSolver::setSolution(int* newSolution) {
 	this->solution = newSolution;
 }
 
+/*Set a new data frame*/
 void KCenterSolver::setDataFrame(DataFrame newDataFrame) {
 	this->dataFrame = newDataFrame;
 }
 
+/*Check if is possible to perform a move. Possible reasons for move prohibition:
+- The move leaves a cluster empty
+- The move breaks some a-priori classification rule (when working with supervised classification)*/
 bool KCenterSolver::shouldMove(std::vector<int> conflicts, int destCluster, int p) {
 	for(int q = 0; q < conflicts.size(); q++) {
 		if(this->solution[conflicts[q]] == destCluster) {
@@ -35,7 +52,7 @@ bool KCenterSolver::shouldMove(std::vector<int> conflicts, int destCluster, int 
 		}
 	}
 
-	/*avoid that a cluster is left empty*/
+	/*Avoid that a cluster is left empty*/
 	if(this->cardinality[solution[p]] > 1) {
 		return true;
 	}
@@ -43,6 +60,9 @@ bool KCenterSolver::shouldMove(std::vector<int> conflicts, int destCluster, int 
 	return false;
 }
 
+/*Performs the local search. This is one of the core parts of the programm, once it performs
+local improvements in the current solution. This method is implemented through polymorphism,
+according to how it is defined by classes that inherit KCenterSolver*/
 void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 	double** data = this->dataFrame.getData();
 	double** sim = this->dataFrame.getSim();
@@ -69,6 +89,7 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 	int it = 0;
 	bool sm;
 	
+	/*While any move improves the solution cost, keep doing it*/
 	while(improvingSolution == true) {
 		
 		improvingSolution = false;
@@ -76,13 +97,15 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 		for(int t = 0; t < m; t++) {
 			modifiedClusters[t] = 0;
 		}
-		
+		/*Shuffle the order in which elements will be explored*/
 		shuffle(arr, n); // O(n)
 
 		for(int i1 = 0; i1 < n; i1++) {
 			i = arr[i1];
 			for(int k = 0; k < m; k++) {
 				sm = shouldMove(conflictGraph[i], k, i);
+
+				/*Check if move is necessary*/
 				if((this->solution[i] != k) && (sm == true) &&
 					((modifiedClusters2[this->solution[i]] == 1) || (modifiedClusters2[k] == 1))) { // O(n) --> KMeans
 					
@@ -90,6 +113,8 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 					updateCentroidsRelocate(i, k, newCentroid1, newCentroid2); // O(d) --> KMeans
 					newcost = getRelocateCost(i, k, newCentroid1, newCentroid2); // O(nd) --> KMeans
 
+					/*If the cost of the solution obtained by applying the relocate move is less than the
+					cost of the curent solution, then perform the relocate move and update the current solution*/
 					if(newcost < this->cost) {
 						relocate(i, k); // O(d) --> KMeans
 						this->solution[i] = k;
@@ -111,7 +136,9 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 
 					updateCentroidsSwap(i, closest[j], newCentroid1, newCentroid2);
 					newcost = getSwapCost(i, closest[j], newCentroid1, newCentroid2);
-						
+					
+					/*If the cost of the solution obtained by applying the swap move is less than the
+					cost of the curent solution, then perform the swap move and update the current solution*/ 	
 					if(newcost < this->cost) {
 						swap(i, closest[j]);
 						this->solution[i] = clusterJ;
@@ -132,6 +159,7 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 	}
 }
 
+/*Get the solution cost after a relocate move*/
 double KCenterSolver::getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2) {
 	int n = this->dataFrame.getInstance().N;
 	int d = this->dataFrame.getInstance().D;
@@ -140,26 +168,33 @@ double KCenterSolver::getRelocateCost(int p, int c2, double* newCentroid1, doubl
 
 	double c = 0.0;
 
+	/*Store current centroids*/
 	double* oldCentroid1 = this->centroid[c1];
 	double* oldCentroid2 = this->centroid[c2];
 
+	/*Set new centroids*/
 	this->centroid[c1] = newCentroid1;
 	this->centroid[c2] = newCentroid2;
 
+	/*Test relocation of point p to cluster c2*/
 	this->solution[p] = c2;
 
+	/*Calculate the new cost*/
 	for(int i = 0; i < n; i++) {
 		c = c + getDistance(data[i], this->centroid[this->solution[i]], d);	
 	}
 
+	/*Back to old centroids*/
 	this->centroid[c1] = oldCentroid1;
 	this->centroid[c2] = oldCentroid2;
 
+	/*Send p back to old cluster*/
 	this->solution[p] = c1;
 
 	return c;
 }
 
+/*Get the solution cost after a swap move*/
 double KCenterSolver::getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2) {
 	int n = this->dataFrame.getInstance().N;
 	int d = this->dataFrame.getInstance().D;
@@ -169,35 +204,42 @@ double KCenterSolver::getSwapCost(int p1, int p2, double* newCentroid1, double* 
 
 	double c = 0.0;
 
+	/*Store current centroids*/
 	double* oldCentroid1 = this->centroid[c1];
 	double* oldCentroid2 = this->centroid[c2];
 
+	/*Set new centroids*/
 	this->centroid[c1] = newCentroid1;
 	this->centroid[c2] = newCentroid2;
 
+	/*Test swap of points*/
 	this->solution[p1] = c2;
 	this->solution[p2] = c1;
 
+	/*Calculate the new cost*/
 	for(int i = 0; i < n; i++) {
 		c = c + getDistance(data[i], this->centroid[this->solution[i]], d);	
 	}
 
+	/*Back to old centroids*/
 	this->centroid[c1] = oldCentroid1;
 	this->centroid[c2] = oldCentroid2;
 
+	/*Send points back to their old clusters*/
 	this->solution[p1] = c1;
 	this->solution[p2] = c2;
 
 	return c;
 }
 
+/*Calculate solution cost from scratch*/
 void KCenterSolver::calculateCost() {
 	int n = this->dataFrame.getInstance().N;
 	int d = this->dataFrame.getInstance().D;
 	double** data = this->dataFrame.getData();
 
 	this->cost = 0.0;
-	
+
 	for(int i = 0; i < n; i++) {
 		this->cost = this->cost + getDistance(data[i], this->centroid[solution[i]], d);
 	}

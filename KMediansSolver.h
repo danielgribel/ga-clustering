@@ -1,31 +1,31 @@
 /************************************************************************************
-KMedoidsSolver.h
-KMedoidsSolver
+KMediansSolver.h
+KMediansSolver
 
 Created by Daniel Gribel
 
-This header file contains the KMedoidsSolver class declaration.
+This header file contains the KMediansSolver class declaration.
 *************************************************************************************/
 
-#ifndef K_Medoids_Solver
-#define K_Medoids_Solver
+#ifndef K_Medians_Solver
+#define K_Medians_Solver
 
 #include "KCenterSolver.h"
 
-class KMedoidsSolver: public KCenterSolver {
-	
-	private:
+class KMediansSolver: public KCenterSolver {
 
+	private:
+		
 		/*Contains the list of elements belonging to each cluster*/
 		std::vector<int>* clusters;
 
 	public:
 
-		/*KMedoidsSolver constructor*/
-		KMedoidsSolver(DataFrame dataFrame, int* solution);
+		/*KMeansSolver constructor*/
+		KMediansSolver(DataFrame dataFrame, int* solution);
 		
-		/*KMedoidsSolver destructor*/
-		~KMedoidsSolver();
+		/*KMeansSolver destructor*/
+		~KMediansSolver();
 
 		/*Get the list of elements belonging to each cluster*/
 		std::vector<int>* getClusters() const;
@@ -34,17 +34,17 @@ class KMedoidsSolver: public KCenterSolver {
 		which leads to a point that may not be a representative*/
 		double getMedian(std::vector<int> cluster, int j);
 
-		/*Calculate the new centroids (medoid points within each cluster) if a relocate move is performed.
+		/*Calculate the new centroids (median points within each cluster) if a relocate move is performed.
 		It does not change the current solution, but only obtain the new centroids that would be
 		resulted from a relocate move*/
 		void updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2);
 		
-		/*Calculate the new centroids (medoid points within each cluster) if a swap move is performed.
+		/*Calculate the new centroids (median points within each cluster) if a swap move is performed.
 		It does not change the current solution, but only obtain the new centroids that would be
 		resulted from a swap move*/
 		void updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2);
 
-		/*Set the centroids. Given a solution, it calculates the centroids (medoid points within each cluster)*/
+		/*Set the centroids. Given a solution, it calculates the centroids (median points within each cluster)*/
 		void createCenters();
 
 		/*Apply relocate move to point p (p is assigned to cluster c2)*/

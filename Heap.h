@@ -17,13 +17,16 @@ This header file contains the Heap class declaration.
 #include <functional>
 
 class HeapPdi {
+
     private:
-        /*Heap data structure. Each item in the heap is a pair <double, int>
-        The double value indicates the cost of a solution
+
+        /*Heap data structure. Each item in the heap is a pair <double, int>.
+        The double value indicates the cost of a solution.
         The int value is the id of a solution*/
         std::vector< std::pair<double, int> > heap;
 
     public:
+
         /*Heap constructor*/
         HeapPdi();
 

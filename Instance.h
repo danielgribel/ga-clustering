@@ -4,7 +4,7 @@ Instance
 
 Created by Daniel Gribel
 
-This header file contains the Instance class declaration.
+This header file contains the Instance struct declaration.
 *************************************************************************************/
 
 #ifndef INSTANCE
@@ -14,6 +14,7 @@ This header file contains the Instance class declaration.
 #include <vector>
 
 struct Instance {
+
 	/*Number of points (dataset size)*/
 	int N;
 

@@ -32,7 +32,7 @@ vector <Instance> getDatasets() {
 	Instance iris45 = createInstance(45, 3, 4, 4, ',', "iris45.csv", false);
 	Instance iris60 = createInstance(60, 3, 4, 4, ',', "iris60.csv", false);
 	Instance iris = createInstance(150, 3, 4, 4, ',', "iris.csv", false);
-	Instance fisher = createInstance(150, 10, 4, 4, ',', "fisher.csv", false);
+	Instance fisher = createInstance(150, 3, 4, 4, ',', "fisher.csv", false);
 	Instance bavaria1 = createInstance(89, 10, 3, 3, ',', "bavaria1.csv", false);
 	Instance bavaria2 = createInstance(89, 10, 4, 4, ',', "bavaria2.csv", false);
 	Instance wine = createInstance(178, 3, 13, 0, ',', "wine.csv", false);
@@ -46,7 +46,7 @@ vector <Instance> getDatasets() {
 	Instance spam = createInstance(4601, 2, 57, 57, ',', "spambase.csv", false);
 	Instance yeast = createInstance(1484, 10, 8, 8, ',', "yeast.csv", false);
 
-	instances.push_back(fisher);
+	instances.push_back(iris60);
 
 	return instances;
 }

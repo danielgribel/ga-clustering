@@ -1,25 +1,54 @@
+/************************************************************************************
+CsgSolver.cpp
+CsgSolver
+
+Created by Daniel Gribel
+
+This cpp file contains the CsgSolver class definition.
+*************************************************************************************/
+
 #include "CsgSolver.h"
 
 using namespace std;
 
+/*CsgSolver constructor*/
 CsgSolver::CsgSolver(DataFrame _dataFrame, int* _solution) {
 	setDataFrame(_dataFrame);
 	setSolution(_solution);
 	calculateCost();
+
+	int n = this->dataFrame.getInstance().N;
+	int m = this->dataFrame.getInstance().M;
+
+	this->cardinality = new int[m];
+
+	for(int i = 0; i < m; i++) {
+		this->cardinality[i] = 0;
+	}
+
+	for(int i = 0; i < n; i++) {
+		this->cardinality[solution[i]]++;
+	}
 }
 
+/*CsgSolver destructor*/
 CsgSolver::~CsgSolver() {
 
 }
 
+/*Set a new solution*/
 void CsgSolver::setSolution(int* _solution) {
 	this->solution = _solution;
 }
 
+/*Set a new data frame*/
 void CsgSolver::setDataFrame(DataFrame _dataFrame) {
 	this->dataFrame = _dataFrame;
 }
 
+/*Check if is possible to perform a move. Possible reasons for move prohibition:
+- The move leaves a cluster empty
+- The move breaks some a-priori classification rule (when working with supervised classification)*/
 bool CsgSolver::shouldMove(std::vector<int> conflicts, int destCluster, int p) {
 	for(int q = 0; q < conflicts.size(); q++) {
 		if(this->solution[conflicts[q]] == destCluster) {
@@ -27,17 +56,16 @@ bool CsgSolver::shouldMove(std::vector<int> conflicts, int destCluster, int p) {
 		}
 	}
 
-	// avoid that a cluster is left empty
-	for(int i = 0; i < this->dataFrame.getInstance().N; i++) {
-		if((this->solution[i] == this->solution[p]) && (i != p)) {
-			return true;
-		}
+	/*Avoid that a cluster is left empty*/
+	if(this->cardinality[solution[p]] > 1) {
+		return true;
 	}
 
 	return false;
 }
 
-double CsgSolver::delta(int c, int p) {
+/*Get the distance of point p to every point within cluster c, i.e., the contribution of p on cluster c*/
+double CsgSolver::costContribution(int p, int c) {
 	int n = this->dataFrame.getInstance().N;
 	double** sim = this->dataFrame.getSim();
 	double cost = 0.0;
@@ -51,6 +79,9 @@ double CsgSolver::delta(int c, int p) {
 	return cost;
 }
 
+/*Performs the local search. This is one of the core parts of the programm, once it performs
+local improvements in the current solution. In CsgSolver, the local search is perform in such a way
+that moves aim to minimize the total within group distances*/
 void CsgSolver::localSearch(std::vector<int>* conflictGraph) {
 	double** data = this->dataFrame.getData();
 	double** sim = this->dataFrame.getSim();
@@ -70,6 +101,8 @@ void CsgSolver::localSearch(std::vector<int>* conflictGraph) {
 	while(improvingSolution == true) {
 		
 		improvingSolution = false;
+
+		/*Shuffle the order in which elements will be explored*/
 		shuffle(arr, n); // O(n)
 
 		for(int i1 = 0; i1 < n; i1++) {
@@ -78,11 +111,22 @@ void CsgSolver::localSearch(std::vector<int>* conflictGraph) {
 				sm = shouldMove(conflictGraph[i], k, i);
 				if((this->solution[i] != k) && (sm == true)) {
 
-					decreasing = delta(this->solution[i], i);
-					increasing = delta(k, i);
+					/*Get the contribution of point p to its current cluster,
+					as a value of decreasing in the total cost if the move is performed*/ 
+					decreasing = costContribution(i, this->solution[i]);
+
+					/*Get the contribution of point p to the destiny current cluster,
+					as a value of increasing in the total cost if the move is performed*/
+					increasing = costContribution(i, k);
+
+					/*Calculate the solution new cost if the move is performed*/
 					newcost = this->cost - decreasing + increasing;
 
+					/*If the cost of the solution obtained by applying the move is less than the
+					cost of the curent solution, then perform the move and update the current solution*/
 					if(newcost < this->cost) {
+						this->cardinality[solution[i]] = this->cardinality[solution[i]] - 1;
+						this->cardinality[k] = this->cardinality[k] + 1;
 						this->solution[i] = k;
 						this->cost = newcost;
 						improvingSolution = true;
@@ -94,6 +138,7 @@ void CsgSolver::localSearch(std::vector<int>* conflictGraph) {
 	}
 }
 
+/*Calculate solution cost from scratch. Heavy processing, should be called only once, when creating the Solver*/
 void CsgSolver::calculateCost() {
 	int n = this->dataFrame.getInstance().N;
 	double** sim = this->dataFrame.getSim();

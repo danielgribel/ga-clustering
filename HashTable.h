@@ -17,6 +17,7 @@
 // Hash Table objects store a fixed number of Linked Lists.
 //*****************************************************************
 class HashTable {
+    
     private:
         
         // Array is a reference to an array of Linked Lists.
