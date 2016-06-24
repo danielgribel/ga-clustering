@@ -1,14 +1,18 @@
-// The contents of this file are in the public domain. See LICENSE_FOR_EXAMPLE_PROGRAMS.txt
-/*
- 
- This simple example shows how to call dlib's optimal linear assignment problem solver.
- It is an implementation of the famous Hungarian algorithm and is quite fast, operating in
- O(N^3) time.
+/************************************************************************************
+MinAssignment.h
+MinAssignment
 
-*/
+The contents of this file are in the public domain. See LICENSE_FOR_EXAMPLE_PROGRAMS.txt
+
+This simple example shows how to call dlib's optimal linear assignment problem solver.
+It is an implementation of the famous Hungarian algorithm and is quite fast, operating in
+O(N^3) time.
+*************************************************************************************/
 
 #include "MinAssignment.h"
 
+/*Returns the minimum assignment between two given sets S and S' with N objects each.
+Used to find an assignment between centroids of two solutions*/
 std::vector<long> minAssignment(double** mat, int m) {
     // Let's imagine you need to assign N people to N jobs.  Additionally, each person will make
     // your company a certain amount of money at each job, but each person has different skills
@@ -21,8 +25,6 @@ std::vector<long> minAssignment(double** mat, int m) {
     // money each person will produce at each job with a cost matrix.  Each row corresponds to a
     // person and each column corresponds to a job.  So for example, below we are saying that
     // person 0 will make $1 at job 0, $2 at job 1, and $6 at job 2.
-    
-    //std::cout << "minAssignment" << std::endl;
 
     dlib::matrix<double> cost(m,m);
     double max = 0.0;
@@ -48,7 +50,5 @@ std::vector<long> minAssignment(double** mat, int m) {
         minCost = minCost + (max - cost(i, assignment[i]));
     }
 
-    //std::cout << minCost << std::endl;
-    
     return assignment;
 }

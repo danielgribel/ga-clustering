@@ -50,11 +50,6 @@ public:
     // Returns true if the operation is successful.
     bool existItem(int* cardinality, double cost, int m);
     
-    // Searches for an item by its key.
-    // Returns a reference to first match.
-    // Returns a NULL pointer if no match is found.
-    //Item * getItem( string itemKey );
-    
     // Displays list contents to the console window.
     void printList();
     

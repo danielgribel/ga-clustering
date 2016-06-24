@@ -1,3 +1,14 @@
+/************************************************************************************
+Util.cpp
+Util
+
+Created by Daniel Gribel
+
+This cpp file contains the Util class definition.
+The Util class contains some useful functions for the system, as
+distance calculations, k-largest indices, sequence randomization, etc
+*************************************************************************************/
+
 #include "Util.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +18,7 @@
 
 using namespace std;
 
+/*Shuffles an array: given an array of size n, returns a random permutation from 0 to n-1*/
 void shuffle(int *myArray, size_t n) {
     for(int i = 0; i < n; i++) {
         myArray[i] = i;
@@ -22,6 +34,7 @@ void shuffle(int *myArray, size_t n) {
     }
 }
 
+/*Get a random solution with n elements and m clusters*/
 int* getRandomSolution(int n, int m) {
     int* s = new int[n];
     
@@ -32,6 +45,7 @@ int* getRandomSolution(int n, int m) {
     return s;
 }
 
+/*Apply perturbation to solution s0: set a random cluster (0..m) to k random elements*/
 int* perturbation(int* s0, int k, int n, int m) {
     int* s = new int[n];
     int randItems[n];
@@ -49,6 +63,7 @@ int* perturbation(int* s0, int k, int n, int m) {
     return s;
 }
 
+/*Calculate the Sum of squares distance for two points a and b, given the number of dimensions d*/
 double sumSquare(double* a, double* b, int d) {
     double sum = 0.0;
     double diff;
@@ -59,11 +74,7 @@ double sumSquare(double* a, double* b, int d) {
     return sum;
 }
 
-double euclidean(double* a, double* b, int d) {
-    double sum = sqrt(sumSquare(a, b, d));
-    return sum;
-}
-
+/*Calculate the Manhattan distance for two points a and b, given the number of dimensions d*/
 double manhattan(double* a, double* b, int d) {
     double sum = 0.0;
     for(int i = 0; i < d; i++) {
@@ -72,10 +83,19 @@ double manhattan(double* a, double* b, int d) {
     return sum;
 }
 
-double getDistance(double* a, double* b, int d) {
-    return euclidean(a, b, d); 
+/*Calculate the Euclidean distance for two points a and b, given the number of dimensions d*/
+double euclidean(double* a, double* b, int d) {
+    double sum = sqrt(sumSquare(a, b, d));
+    return sum;
 }
 
+/*Calculate the distance between two points a and b, given the number of dimensions d
+This function call the specific distance implementation (Manhattan, Euclidean, Sum of squares, etc)*/
+double getDistance(double* a, double* b, int d) {
+    return sumSquare(a, b, d); 
+}
+
+/*Given an array myArray, return the k largest elements*/
 double* kLargest(double* myArray, int m, int k) {
     double* A = new double[m];
     for(int i = 0; i < m; i++) {
@@ -115,6 +135,7 @@ int* randAnnotated(int n, int m) {
     return annotated;
 }
 
+/*Given a vector v, return the indices of the k smallest elements*/
 vector<int> kSmallestIndices(vector<double> v, int k) {
     priority_queue<pair< double, int>, vector < pair< double, int> >, smallerOp > q;
     
@@ -134,6 +155,7 @@ vector<int> kSmallestIndices(vector<double> v, int k) {
     return n_closest;
 }
 
+/*Given an array v of size n, return the indices of the k smallest elements*/
 vector<int> kSmallestIndices(double* v, int n, int k) {
     priority_queue<pair< double, int>, vector < pair< double, int> >, smallerOp > q;
 
@@ -152,16 +174,3 @@ vector<int> kSmallestIndices(double* v, int n, int k) {
 
     return n_closest;
 }
-
-/*int main() {
-    vector<double> v = {5.2, 1.0, 0.01, 3.0, 0.002, -1.0, 20};
-    int k = 3; // number of indices we need
-
-    vector<int> n_closest = kSmallestIndices(v, k);
-
-    for(int i = 0; i < k; ++i) {
-        cout << n_closest[i] << endl;
-    }
-
-    return 0;
-}*/

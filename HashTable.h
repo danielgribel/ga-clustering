@@ -41,10 +41,6 @@ class HashTable {
         // Returns true if the operation is successful.
         bool existItem(int* cardinality, double cost, int m);
         
-        // Returns an item from the Hash Table by key.
-        // If the item isn't found, a null pointer is returned.
-        //Item * getItemByKey( string itemKey );
-        
         // Display the contents of the Hash Table to console window.
         void printTable();
         

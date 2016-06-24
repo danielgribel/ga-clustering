@@ -19,11 +19,7 @@ double** KMeansSolver::getSumD() const {
 	return this->sumD;
 }
 
-/*int* KMeansSolver::getSize() const {
-	return this->size;
-}*/
-
-void KMeansSolver::calculateNewCentroids(int p, int c2, double* newCentroid1, double* newCentroid2) {
+void KMeansSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {
 	double** data = this->dataFrame.getData();
 	int c1 = this->solution[p];
 
@@ -33,7 +29,7 @@ void KMeansSolver::calculateNewCentroids(int p, int c2, double* newCentroid1, do
 	}
 }
 
-void KMeansSolver::calculateNewCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
+void KMeansSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
 	double** data = this->dataFrame.getData();
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];

@@ -1,7 +1,17 @@
+/************************************************************************************
+Instance.cpp
+Instance
+
+Created by Daniel Gribel
+
+This cpp file contains the Instance class definition.
+*************************************************************************************/
+
 #include "Instance.h"
 
 using namespace std;
 
+/*Create an instance for a dataset*/
 Instance createInstance(int N, int M, int D, int labelCol, char delimiter, string file, bool hasId) {
 	Instance instance;
 	instance.N = N;
@@ -15,6 +25,7 @@ Instance createInstance(int N, int M, int D, int labelCol, char delimiter, strin
 	return instance;
 }
 
+/*Add instances that will be loaded by the program and return them*/
 vector <Instance> getDatasets() {
 	vector <Instance> instances;
 
@@ -22,6 +33,8 @@ vector <Instance> getDatasets() {
 	Instance iris60 = createInstance(60, 3, 4, 4, ',', "iris60.csv", false);
 	Instance iris = createInstance(150, 3, 4, 4, ',', "iris.csv", false);
 	Instance fisher = createInstance(150, 10, 4, 4, ',', "fisher.csv", false);
+	Instance bavaria1 = createInstance(89, 10, 3, 3, ',', "bavaria1.csv", false);
+	Instance bavaria2 = createInstance(89, 10, 4, 4, ',', "bavaria2.csv", false);
 	Instance wine = createInstance(178, 3, 13, 0, ',', "wine.csv", false);
 	Instance glass = createInstance(214, 6, 9, 10, ',', "glass.csv", true);
 	Instance heart = createInstance(297, 10, 13, 13, ',', "heart.csv", false);
@@ -33,7 +46,7 @@ vector <Instance> getDatasets() {
 	Instance spam = createInstance(4601, 2, 57, 57, ',', "spambase.csv", false);
 	Instance yeast = createInstance(1484, 10, 8, 8, ',', "yeast.csv", false);
 
-	instances.push_back(glass);
+	instances.push_back(fisher);
 
 	return instances;
 }

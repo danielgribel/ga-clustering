@@ -763,7 +763,7 @@ void demo(int seed, clock_t begin) {
 }
 
 Solver* createSolver(DataFrame dataFrame, int* solution) {
-	Solver* solver = new KMedoidsSolver(dataFrame, solution);
+	Solver* solver = new KMeansSolver(dataFrame, solution);
 	return solver;
 }
 

@@ -10,20 +10,19 @@ class KCenterSolver: public Solver {
 	public:
 		KCenterSolver(DataFrame data, int* solution);
 		~KCenterSolver();
-		double** getCentroid() const;
+		double** getCentroids() const;
 		void setSolution(int* newSolution);
 		void setDataFrame(DataFrame newDataFrame);
 		bool shouldMove(std::vector<int> conflicts, int destCluster, int e);
 		void localSearch(std::vector<int>* conflictGraph);
-		virtual void calculateNewCentroids(int p, int c2, double* newCentroid1, double* newCentroid2) = 0;
-		virtual void calculateNewCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) = 0;
+		virtual void updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) = 0;
+		virtual void updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) = 0;
 		virtual void createCenters() = 0;
 		virtual void relocate(int p, int c2) = 0;
 		virtual void swap(int p1, int p2) = 0;
-		double getMoveCost(int p, int c2, double* newCentroid1, double* newCentroid2);
-		double getMoveCostSwap(int p1, int p2, double* newCentroid1, double* newCentroid2);
+		double getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2);
+		double getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2);
 		void calculateCost();
-		bool assign();
 };
 
 #endif
