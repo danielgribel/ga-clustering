@@ -5,6 +5,8 @@ Heap
 Created by Daniel Gribel
 
 This header file contains the Heap class declaration.
+
+A heap data structure to keep and manage the best solutions.
 *************************************************************************************/
 
 #ifndef Heap_Pdi_H

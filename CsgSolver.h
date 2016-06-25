@@ -5,6 +5,13 @@ CsgSolver
 Created by Daniel Gribel
 
 This header file contains the CsgSolver class declaration.
+
+The CsgSolver class represents an optimization solver that considers the total within
+clusters distances as the objective for clustering.
+
+Given an initial solution, it applies local improvements aiming to minimize the total
+within group distances, i.e., the sum of distances of all points belonging to the
+same cluster.
 *************************************************************************************/
 
 #ifndef Csg_Solver
@@ -17,7 +24,7 @@ class CsgSolver: public Solver {
 	public:
 
 		/*CsgSolver constructor*/
-		CsgSolver(DataFrame _dataFrame, int* _solution);
+		CsgSolver(DataFrame* _dataFrame, int* _solution);
 		
 		/*CsgSolver destructor*/
 		~CsgSolver();

@@ -5,6 +5,8 @@ Heap
 Created by Daniel Gribel
 
 This cpp file contains the Heap class definition.
+
+A heap data structure to keep and manage the best solutions.
 *************************************************************************************/
 #include "Heap.h"
 

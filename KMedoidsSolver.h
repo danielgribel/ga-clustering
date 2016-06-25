@@ -5,6 +5,14 @@ KMedoidsSolver
 Created by Daniel Gribel
 
 This header file contains the KMedoidsSolver class declaration.
+
+The KMedoidsSolver class represents an optimization solver that considers the medoid point
+of each cluster as a centroid. Given an initial solution, it applies local improvements
+in order to minimize the distance of each point to the correspondent centroid -- in this
+case, the medoid point inside the cluster.
+
+The medoid point inside a cluster is the representative (point belonging to the dataset)
+that minimizes the distance for each other point within the cluster.
 *************************************************************************************/
 
 #ifndef K_Medoids_Solver
@@ -22,7 +30,7 @@ class KMedoidsSolver: public KCenterSolver {
 	public:
 
 		/*KMedoidsSolver constructor*/
-		KMedoidsSolver(DataFrame dataFrame, int* solution);
+		KMedoidsSolver(DataFrame* dataFrame, int* solution);
 		
 		/*KMedoidsSolver destructor*/
 		~KMedoidsSolver();

@@ -5,6 +5,15 @@ KMeansSolver
 Created by Daniel Gribel
 
 This cpp file contains the KMeansSolver class definition.
+
+The KMeansSolver class represents an optimization solver that considers the mean point
+of each cluster as a centroid. Given an initial solution, it applies local improvements
+in order to minimize the distance of each point to the correspondent centroid -- in this
+case, the mean point inside the cluster.
+
+The mean point inside a cluster is obtained by calculating the mean value for each
+feature among all points belonging to the cluster. Thus, the centroid is not likely
+to be a representative point (point belonging to the dataset).
 *************************************************************************************/
 
 #include "KMeansSolver.h"
@@ -15,7 +24,7 @@ This cpp file contains the KMeansSolver class definition.
 using namespace std;
 
 /*KCenterSolver constructor*/
-KMeansSolver::KMeansSolver(DataFrame dataFrame, int* solution)
+KMeansSolver::KMeansSolver(DataFrame* dataFrame, int* solution)
 : KCenterSolver(dataFrame, solution) {
 	createCenters();
 	calculateCost();
@@ -34,10 +43,10 @@ double** KMeansSolver::getSumFeatures() const {
 /*Calculate the new centroids (mean points within each cluster) if a relocate move is performed.
 It does not change the current solution, but only obtain the new centroids resulting from a relocate move*/
 void KMeansSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	int c1 = this->solution[p];
 
-	for(int i = 0; i < this->dataFrame.getInstance().D; i++) {
+	for(int i = 0; i < this->dataFrame->getInstance().D; i++) {
 		newCentroid1[i] = (1.0*(this->sumFeatures[c1][i] - data[p][i]))/(this->cardinality[c1]-1);
 		newCentroid2[i] = (1.0*(this->sumFeatures[c2][i] + data[p][i]))/(this->cardinality[c2]+1);
 	}
@@ -46,11 +55,11 @@ void KMeansSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, 
 /*Calculate the new centroids (mean points within each cluster) if a swap move is performed.
 It does not change the current solution, but only obtain the new centroids resulting from a swap move*/
 void KMeansSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
 
-	for(int i = 0; i < this->dataFrame.getInstance().D; i++) {
+	for(int i = 0; i < this->dataFrame->getInstance().D; i++) {
 		newCentroid1[i] = (1.0*(this->sumFeatures[c1][i] + data[p2][i] - data[p1][i]))/(this->cardinality[c1]);
 		newCentroid2[i] = (1.0*(this->sumFeatures[c2][i] + data[p1][i] - data[p2][i]))/(this->cardinality[c2]);
 	}
@@ -58,10 +67,10 @@ void KMeansSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, dou
 
 /*Set the centroids. Given a solution, it calculates the centroids (mean points within each cluster)*/
 void KMeansSolver::createCenters() {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
-	double** data = this->dataFrame.getData();
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
 	
 	this->centroid = new double*[M];
 	this->sumFeatures = new double*[M];
@@ -97,9 +106,9 @@ void KMeansSolver::createCenters() {
 
 /*Apply relocate move to point p (p is assigned to cluster c2)*/
 void KMeansSolver::relocate(int p, int c2) {
-	int d = this->dataFrame.getInstance().D;
+	int d = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	/*Update clusters cardinality. c1 loses one point and c2 gains one.*/
 	this->cardinality[c1] = this->cardinality[c1] - 1;
@@ -116,10 +125,10 @@ void KMeansSolver::relocate(int p, int c2) {
 
 /*Apply swap move between points p1 and p2 (p1 is moved to p2 cluster and p2 is moved to p1 cluster)*/
 void KMeansSolver::swap(int p1, int p2) {
-	int d = this->dataFrame.getInstance().D;
+	int d = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	/*Update centroids according to the new set of points belonging to each cluster*/
 	for(int i = 0; i < d; i++) {

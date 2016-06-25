@@ -6,9 +6,9 @@ Created by Daniel Gribel
 
 This cpp file contains the Solver class definition.
 
-The Solver class is an absract and super-class which is defined to solve the optimization (clustering) problem.
-It is associated to a space of points defined in DataFrame and stores a solution, its cost, and
-the cardinality of each cluster (group) of the solution.
+The Solver class is an absract and super-class which is defined to solve the optimization
+(clustering) problem. It is associated to a space of points defined in DataFrame and
+stores a solution, its cost, and the cardinality of each cluster (group) of the solution.
 *************************************************************************************/
 
 #include "Solver.h"
@@ -19,7 +19,7 @@ void Solver::setSolution(int* newSolution) {
 }
 
 /*Set a new data frame*/
-void Solver::setDataFrame(DataFrame newDataFrame) {
+void Solver::setDataFrame(DataFrame* newDataFrame) {
 	this->dataFrame = newDataFrame;
 }
 

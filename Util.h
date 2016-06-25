@@ -4,9 +4,10 @@ Util
 
 Created by Daniel Gribel
 
-This header file contains the Util class declaration.
-The Util class contains some useful functions for the system, as
-distance calculations, k-largest indices, sequence randomization, etc
+This cpp file contains the Util class definition.
+
+The Util class contains some useful functions for the system, as distance calculations,
+k-largest indices, sequence randomization, etc
 *************************************************************************************/
 
 #ifndef Util

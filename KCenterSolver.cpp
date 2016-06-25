@@ -5,6 +5,16 @@ KCenterSolver
 Created by Daniel Gribel
 
 This cpp file contains the KCenterSolver class definition.
+
+The KCenterSolver class represents a centroid-based optimization solver.
+The KCenterSolver is an abstract class child of Solver and parent of
+KMeansSolver, KMediansSolver and KMedoidsSolver classes, which have their own
+implementation according to their objective functions.
+
+In a general manner, given an initial solution, a centroid-based solver applies
+local improvements in order to minimize the distance of each point to the
+correspondent centroid -- KMeansSolver, KMediansSolver and KMedoidsSolver define how
+the centroids are calculated.
 *************************************************************************************/
 
 #include "KCenterSolver.h"
@@ -17,7 +27,7 @@ using namespace std;
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
 /*KCenterSolver constructor*/
-KCenterSolver::KCenterSolver(DataFrame dataFrame, int* solution) {
+KCenterSolver::KCenterSolver(DataFrame* dataFrame, int* solution) {
 	setDataFrame(dataFrame);
 	setSolution(solution);
 }
@@ -36,11 +46,11 @@ double** KCenterSolver::getCentroids() const {
 local improvements in the current solution. This method is implemented through polymorphism,
 according to how it is defined by classes that inherit KCenterSolver*/
 void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
-	double** data = this->dataFrame.getData();
-	double** sim = this->dataFrame.getSim();
-	int n = this->dataFrame.getInstance().N;
-	int m = this->dataFrame.getInstance().M;
-	int d = this->dataFrame.getInstance().D;
+	double** data = this->dataFrame->getData();
+	double** sim = this->dataFrame->getSim();
+	int n = this->dataFrame->getInstance().N;
+	int m = this->dataFrame->getInstance().M;
+	int d = this->dataFrame->getInstance().D;
 	bool improvingSolution = true;
 	double newcost;
 	int prev = 0;
@@ -98,7 +108,7 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 				}
 			}
 
-			vector<int> closest = this->getDataFrame().getClosest()[i];
+			vector<int> closest = this->getDataFrame()->getClosest()[i];
 
 			for(int j = 0; j < closest.size(); j++) {
 				clusterI = this->solution[i];
@@ -133,10 +143,10 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 
 /*Get the solution cost after a relocate move*/
 double KCenterSolver::getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2) {
-	int n = this->dataFrame.getInstance().N;
-	int d = this->dataFrame.getInstance().D;
+	int n = this->dataFrame->getInstance().N;
+	int d = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	double c = 0.0;
 
@@ -168,11 +178,11 @@ double KCenterSolver::getRelocateCost(int p, int c2, double* newCentroid1, doubl
 
 /*Get the solution cost after a swap move*/
 double KCenterSolver::getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2) {
-	int n = this->dataFrame.getInstance().N;
-	int d = this->dataFrame.getInstance().D;
+	int n = this->dataFrame->getInstance().N;
+	int d = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	double c = 0.0;
 
@@ -206,9 +216,9 @@ double KCenterSolver::getSwapCost(int p1, int p2, double* newCentroid1, double* 
 
 /*Calculate solution cost from scratch*/
 void KCenterSolver::calculateCost() {
-	int n = this->dataFrame.getInstance().N;
-	int d = this->dataFrame.getInstance().D;
-	double** data = this->dataFrame.getData();
+	int n = this->dataFrame->getInstance().N;
+	int d = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
 
 	this->cost = 0.0;
 

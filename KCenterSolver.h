@@ -5,6 +5,16 @@ KCenterSolver
 Created by Daniel Gribel
 
 This header file contains the KCenterSolver class declaration.
+
+The KCenterSolver class represents a centroid-based optimization solver.
+The KCenterSolver is an abstract class child of Solver and parent of
+KMeansSolver, KMediansSolver and KMedoidsSolver classes, which have their own
+implementation according to their objective functions.
+
+In a general manner, given an initial solution, a centroid-based solver applies
+local improvements in order to minimize the distance of each point to the
+correspondent centroid -- KMeansSolver, KMediansSolver and KMedoidsSolver define how
+the centroids are calculated.
 *************************************************************************************/
 
 #ifndef K_Center_Solver
@@ -23,7 +33,7 @@ class KCenterSolver: public Solver {
 	public:
 
 		/*KCenterSolver constructor*/
-		KCenterSolver(DataFrame data, int* solution);
+		KCenterSolver(DataFrame* data, int* solution);
 		
 		/*KCenterSolver destructor*/
 		~KCenterSolver();

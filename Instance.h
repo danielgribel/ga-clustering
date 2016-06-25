@@ -5,6 +5,10 @@ Instance
 Created by Daniel Gribel
 
 This header file contains the Instance struct declaration.
+
+Describes an instance (dataset) of the problem. It stores fields as number of points
+(dataset size), number of desired clusters (groups), number of dimenions in the space
+(features), the file name of the dataset, etc.
 *************************************************************************************/
 
 #ifndef INSTANCE
@@ -24,9 +28,6 @@ struct Instance {
 	/*Number of dimenions in the space (features)*/
 	int D;
 
-	/*In which column of the dataset file the label (class) is*/
-	int labelCol;
-	
 	/*The delimiter for attributes (features) of the dataset (e.g.: comma, space, tab, etc)*/
 	char delimiter;
 	
@@ -36,11 +37,5 @@ struct Instance {
 	/*Flag indicating if ids exist in the dataset. If True, the programm discard them, as they are not features*/
 	bool hasId;
 };
-
-/*Create an instance for a dataset*/
-Instance createInstance(int N, int M, int D, int labelCol, char delimiter, std::string file, bool hasId);
-
-/*Add instances that will be loaded by the program and return them*/
-std::vector <Instance> getDatasets();
 
 #endif

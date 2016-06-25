@@ -5,6 +5,15 @@ KMeansSolver
 Created by Daniel Gribel
 
 This header file contains the KMeansSolver class declaration.
+
+The KMeansSolver class represents an optimization solver that considers the mean point
+of each cluster as a centroid. Given an initial solution, it applies local improvements
+in order to minimize the distance of each point to the correspondent centroid -- in this
+case, the mean point inside the cluster.
+
+The mean point inside a cluster is obtained by calculating the mean value for each
+feature among all points belonging to the cluster. Thus, the centroid is not likely
+to be a representative point (point belonging to the dataset).
 *************************************************************************************/
 
 #ifndef K_Means_Solver
@@ -22,7 +31,7 @@ class KMeansSolver: public KCenterSolver {
 	public:
 		
 		/*KMeansSolver constructor*/
-		KMeansSolver(DataFrame data, int* solution);
+		KMeansSolver(DataFrame* data, int* solution);
 		
 		/*KMeansSolver destructor*/
 		~KMeansSolver();

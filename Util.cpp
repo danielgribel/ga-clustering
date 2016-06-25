@@ -5,8 +5,9 @@ Util
 Created by Daniel Gribel
 
 This cpp file contains the Util class definition.
-The Util class contains some useful functions for the system, as
-distance calculations, k-largest indices, sequence randomization, etc
+
+The Util class contains some useful functions for the system, as distance calculations,
+k-largest indices, sequence randomization, etc
 *************************************************************************************/
 
 #include "Util.h"
@@ -92,7 +93,7 @@ double euclidean(double* a, double* b, int d) {
 /*Calculate the distance between two points a and b, given the number of dimensions d
 This function call the specific distance implementation (Manhattan, Euclidean, Sum of squares, etc)*/
 double getDistance(double* a, double* b, int d) {
-    return euclidean(a, b, d); 
+    return sumSquare(a, b, d); 
 }
 
 /*Given an array myArray, return the k largest elements*/

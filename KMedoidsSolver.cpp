@@ -5,6 +5,14 @@ KMedoidsSolver
 Created by Daniel Gribel
 
 This cpp file contains the KMedoidsSolver class definition.
+
+The KMedoidsSolver class represents an optimization solver that considers the medoid point
+of each cluster as a centroid. Given an initial solution, it applies local improvements
+in order to minimize the distance of each point to the correspondent centroid -- in this
+case, the medoid point inside the cluster.
+
+The medoid point inside a cluster is the representative (point belonging to the dataset)
+that minimizes the distance for each other point within the cluster.
 *************************************************************************************/
 
 #include "KMedoidsSolver.h"
@@ -19,7 +27,7 @@ using namespace std;
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
 /*KMedoidsSolver constructor*/
-KMedoidsSolver::KMedoidsSolver(DataFrame dataFrame, int* solution)
+KMedoidsSolver::KMedoidsSolver(DataFrame* dataFrame, int* solution)
 : KCenterSolver(dataFrame, solution) {
 	createCenters();
 	calculateCost();
@@ -40,7 +48,7 @@ which leads to a point that may not be a representative*/
 double KMedoidsSolver::getMedian(std::vector<int> cl, int j) {
 	const int clusterSize = cl.size();
 	double values[clusterSize];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	
 	for(int i = 0; i < clusterSize; i++) {
 		values[i] = data[cl[i]][j];
@@ -91,10 +99,10 @@ void KMedoidsSolver::updateClusters(int p1, int p2, int c1, int c2) {
 
 /*Set the centroids. Given a solution, it calculates the centroids (medoid points within each cluster)*/
 void KMedoidsSolver::createCenters() {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
-	double** data = this->dataFrame.getData();
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
 
 	int* centers = new int[M];
 	this->centroid = new double*[M];
@@ -146,11 +154,11 @@ void KMedoidsSolver::createCenters() {
 It does not change the current solution, but only obtain the new centroids that would be
 resulted from a relocate move*/
 void KMedoidsSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {
-	int d = this->dataFrame.getInstance().D;
-	int n = this->dataFrame.getInstance().N;
+	int d = this->dataFrame->getInstance().D;
+	int n = this->dataFrame->getInstance().N;
 	int c1 = this->solution[p];
 
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	int y = 0;
 
 	for(int i = 0; i < this->clusters[c1].size(); i++) {
@@ -200,11 +208,11 @@ void KMedoidsSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1
 
 /*Apply relocate move to point p (p is assigned to cluster c2)*/
 void KMedoidsSolver::relocate(int p, int c2) {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	this->cardinality[c1] = this->cardinality[c1] - 1;
 	this->cardinality[c2] = this->cardinality[c2] + 1;
@@ -245,12 +253,12 @@ void KMedoidsSolver::relocate(int p, int c2) {
 It does not change the current solution, but only obtain the new centroids that would be
 resulted from a swap move*/
 void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
-	int d = this->dataFrame.getInstance().D;
-	int n = this->dataFrame.getInstance().N;
+	int d = this->dataFrame->getInstance().D;
+	int n = this->dataFrame->getInstance().N;
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
 
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	int y1 = 0;
 	int y2 = 0;
 
@@ -307,12 +315,12 @@ void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, d
 
 /*Apply swap move between points p1 and p2 (p1 is moved to p2 cluster and p2 is moved to p1 cluster)*/
 void KMedoidsSolver::swap(int p1, int p2) {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	updateClusters(p1, p2, c1, c2);
 

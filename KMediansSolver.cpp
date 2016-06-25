@@ -5,6 +5,15 @@ KMediansSolver
 Created by Daniel Gribel
 
 This cpp file contains the KMediansSolver class definition.
+
+The KMediansSolver class represents an optimization solver that considers the median point
+of each cluster as a centroid. Given an initial solution, it applies local improvements
+in order to minimize the distance of each point to the correspondent centroid -- in this
+case, the median point inside the cluster.
+
+The median point inside a cluster is obtained by calculating the median value for each
+feature among all points belonging to the cluster. Thus, the centroid is not likely
+to be a representative point (point belonging to the dataset).
 *************************************************************************************/
 
 #include "KMediansSolver.h"
@@ -12,7 +21,7 @@ This cpp file contains the KMediansSolver class definition.
 using namespace std;
 
 /*KMeansSolver constructor*/
-KMediansSolver::KMediansSolver(DataFrame dataFrame, int* solution)
+KMediansSolver::KMediansSolver(DataFrame* dataFrame, int* solution)
 : KCenterSolver(dataFrame, solution) {
 	createCenters();
 	calculateCost();
@@ -33,7 +42,7 @@ which leads to a point that may not be a representative*/
 double KMediansSolver::getMedian(std::vector<int> c, int j) {
 	const int clusterSize = c.size();
 	double values[clusterSize];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	
 	for(int i = 0; i < clusterSize; i++) {
 		values[i] = data[c[i]][j];
@@ -84,10 +93,10 @@ void KMediansSolver::updateClusters(int p1, int p2, int c1, int c2) {
 
 /*Set the centroids. Given a solution, it calculates the centroids (median points within each cluster)*/
 void KMediansSolver::createCenters() {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
-	double** data = this->dataFrame.getData();
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
 
 	this->centroid = new double*[M];
 	this->clusters = new vector<int>[M];
@@ -114,10 +123,10 @@ void KMediansSolver::createCenters() {
 It does not change the current solution, but only obtain the new centroids that would be
 resulted from a relocate move*/
 void KMediansSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 	int c1 = this->solution[p]; 
 	int q = 0;
-	int d = this->dataFrame.getInstance().D;
+	int d = this->dataFrame->getInstance().D;
 
 	for(int i = 0; i < this->clusters[c1].size(); i++) {
 		if(this->clusters[c1][i] == p) {
@@ -139,11 +148,11 @@ void KMediansSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1
 
 /*Apply relocate move to point p (p is assigned to cluster c2)*/
 void KMediansSolver::relocate(int p, int c2) {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	this->cardinality[c1] = this->cardinality[c1] - 1;
 	this->cardinality[c2] = this->cardinality[c2] + 1;
@@ -160,8 +169,8 @@ void KMediansSolver::relocate(int p, int c2) {
 It does not change the current solution, but only obtain the new centroids that would be
 resulted from a swap move*/
 void KMediansSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
-	int D = this->dataFrame.getInstance().D;
-	double** data = this->dataFrame.getData();
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
 	int q1 = 0;
 	int q2 = 0;
 	int c1 = this->solution[p1];
@@ -193,12 +202,12 @@ void KMediansSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, d
 
 /*Apply swap move between points p1 and p2 (p1 is moved to p2 cluster and p2 is moved to p1 cluster)*/
 void KMediansSolver::swap(int p1, int p2) {
-	int N = this->dataFrame.getInstance().N;
-	int M = this->dataFrame.getInstance().M;
-	int D = this->dataFrame.getInstance().D;
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p1];
 	int c2 = this->solution[p2];
-	double** data = this->dataFrame.getData();
+	double** data = this->dataFrame->getData();
 
 	updateClusters(p1, p2, c1, c2);
 

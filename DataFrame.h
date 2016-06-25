@@ -5,6 +5,9 @@ DataFrame
 Created by Daniel Gribel
 
 This header file contains the DataFrame class declaration.
+
+Represents the data for an instance. It stores the dataset points in the space, the
+similarity matrix between points of the dataset, the label (class) of points, etc.
 *************************************************************************************/
 
 #ifndef DATA_FRAME

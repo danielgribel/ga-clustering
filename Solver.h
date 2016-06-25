@@ -6,9 +6,9 @@ Created by Daniel Gribel
 
 This header file contains the Solver class declaration.
 
-The Solver class is an absract and super-class which is defined to solve the optimization (clustering) problem.
-It is associated to a space of points defined in DataFrame and stores a solution, its cost, and
-the cardinality of each cluster (group) of the solution.
+The Solver class is an absract and super-class which is defined to solve the optimization
+(clustering) problem. It is associated to a space of points defined in DataFrame and
+stores a solution, its cost, and the cardinality of each cluster (group) of the solution.
 *************************************************************************************/
 
 #ifndef Solver_H
@@ -27,7 +27,7 @@ class Solver {
 		int* solution;
 		
 		/*A reference to the data frame, which describes the dataset*/
-		DataFrame dataFrame;
+		DataFrame* dataFrame;
 		
 		/*The cost of the current solution*/
 		double cost;
@@ -47,7 +47,7 @@ class Solver {
         int* getCardinality() { return this->cardinality; };
         
         /*Get the data frame*/
-        DataFrame getDataFrame() const { return this->dataFrame; };
+        DataFrame* getDataFrame() const { return this->dataFrame; };
         
         /*Performs the local search. This is one of the core parts of the programm, once it performs
         local improvements in the current solution. This method is implemented through polymorphism,
@@ -62,7 +62,7 @@ class Solver {
 		void setSolution(int* newSolution);
 
 		/*Set a new data frame*/
-		void setDataFrame(DataFrame newDataFrame);
+		void setDataFrame(DataFrame* newDataFrame);
 
 		/*Check if is possible to perform a move. Possible reasons for move prohibition:
 		- The move leaves a cluster empty
