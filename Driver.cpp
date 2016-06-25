@@ -1,3 +1,14 @@
+/************************************************************************************
+Driver.h
+Driver
+
+Created by Daniel Gribel
+
+The Driver file is the main file in the system. It contains the GA (Genetic Algorithm)
+main loop and some important directives as input file loading, input validation,
+constants declaration, accuracy calculation for results, etc
+*************************************************************************************/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,6 +35,7 @@
 
 using namespace std;
 
+/*Stores the id of the chosen solver*/
 string solverId;
 
 /*Declaration of a pair of integers*/
@@ -38,16 +50,22 @@ string solverId;
 /*Declaration of the datasets path*/
 #define INPUT_PATH "data/"
 
+/*Solver id for KMeansSolver */
 #define MEAN_ID "mean"
 
+/*Solver id for KMediansSolver*/ 
 #define MEDIAN_ID "median"
 
+/*Solver id for KMedoidsSolver*/
 #define MEDOID_ID "medoid"
 
+/*Solver id for CsgSolver*/
 #define CSG_ID "csg"
 
+/*Max value for a float numer (used as infinite)*/
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
+/*The porcentage of items used as training set -- Used only for classification purpose*/
 const double PORC_ANNOTATED = 0.0;
 
 Solver* createSolver(DataFrame* dataFrame, int* solution);
@@ -60,12 +78,15 @@ void printSolution(int* solution, int n) {
 	cout << endl;
 }
 
+/*Calculate the rand index, which is a measure for partitions agreement. Useful to test accuracy*/
 double rand(int a, int b, int c, int d) {
 	int total = a + b + c + d;
 	double randIndex = 1.0*(a + d)/total;
 	return randIndex;
 }
 
+/*Calculate the c-rand index (or adjusted rand), which is a measure for partitions agreement.
+Useful to test accuracy*/
 double crand(int a, int b, int c, int d) {
 	int total = a + b + c + d;
 	double crandIndex = (a - (1.0*(b + a)*(c + a))/total)/((1.0*(b + a + c + a))/2 - (1.0*(b + a)*(c + a))/total);
@@ -122,6 +143,7 @@ void evalSolution(int* solution, int* label, DataFrame* dataFrame, string algori
 	cout << algorithm + " #crand: " << crand(a, b, c, d) << endl;
 }
 
+/*Returns the position where a string occurs in a vector*/
 int posInVector(vector<string> labels, string s) {
 	int pos = std::find(labels.begin(), labels.end(), s) - labels.begin();
 	return pos;
@@ -148,10 +170,12 @@ Instance getInstance(int n, int m, int d, char adelimiter, string afile, bool ah
     return instance;
 }
 
+/*Load the dataset*/
 DataFrame* load(string fileName, int m) {
     
     ifstream file( (INPUT_PATH + fileName).c_str() );
 
+    /*Abort if the file does not exist*/
     if ( !file.good() ) {
         cout << "Error on file reading" << endl;
         return NULL;
@@ -163,6 +187,7 @@ DataFrame* load(string fileName, int m) {
     file >> n;
     file >> d;
 
+    /*Abort if the number of points in the dataset is smaller than the number of desired clusters*/
     if(n < m) {
         cout << "n must be greater than m" << endl;
         return NULL;
@@ -196,6 +221,7 @@ DataFrame* load(string fileName, int m) {
         getline(file, line);
 
         if ( !file.good() ) {
+            /*Abort if the file format is not ok*/
             cout << "Error on file line reading" << endl;
             return NULL;
         }
@@ -212,6 +238,7 @@ DataFrame* load(string fileName, int m) {
                 continue;
             }
             
+            /*Get the label (class)*/
             if(col == d) {
                 pos = posInVector(labels, val);
                 if(pos >= labels.size()) {
@@ -249,6 +276,7 @@ DataFrame* load(string fileName, int m) {
     vector< vector<int> > closestObjects(n, vector<int>(numClosest));
     vector<int> v;
 
+    /*Get the $numCloset closest points for each point in the dataset*/
     for(int i = 0; i < n; i++) {
         closestObjects[i] = kSmallestIndices(sim[i], n, numClosest);
     }
@@ -258,6 +286,8 @@ DataFrame* load(string fileName, int m) {
     return dataFrame;
 }
 
+/*Impose conflicts in the supervised learning version. This function keeps the points that must not be
+in the same cluster, as we have labels (classes) for the training set -- Used only for classification purpose*/
 void imposeConflicts(int* annotated, int* label, vector<int>* conflictGraph, int m) {
 	int a;
 	int b;
@@ -269,88 +299,6 @@ void imposeConflicts(int* annotated, int* label, vector<int>* conflictGraph, int
 			if(label[a] != label[b]) {
 				conflictGraph[a].push_back(b);
 			}
-		}
-	}
-}
-
-int * intdup(int const * src, size_t len) {
-   int * p = (int *) malloc(len * sizeof(int));
-   memcpy(p, src, len * sizeof(int));
-   return p;
-}
-
-void crossoverX(int* p1, int* p2, int* offspring, int n, int m) {
-	vector< vector<int> > groups(2*m);
-	int markedCluster[2*m];
-	int markedPoint[n];
-
-	int keyOrder[m];
-
-	for(int i = 0; i < m; i++) {
-		keyOrder[i] = i*2;
-	}
-
-	for(int i = 0; i < n; i++) {
-		groups[keyOrder[p1[i]]].push_back(i);
-		groups[keyOrder[p2[i]]+1].push_back(i);
-	}
-
-	for(int i = 0; i < 2*m; i++) {
-		markedCluster[i] = 0;
-	}
-
-	for(int i = 0; i < n; i++) {
-		markedPoint[i] = 0;
-		offspring[i] = -1;
-	}
-
-	int max;
-	int maxIndex;
-	int maxC = 0;
-	int counter = 0;
-	int p;
-	int c = 0;
-	bool b;
-
-	while(counter < 2*m) {
-		max = 0;
-		maxIndex = 0;
-
-		// getting the group with max cardinality
-		for(int i = 0; i < 2*m; i++) {
-			if((groups[i].size() > max) && (markedCluster[i] == 0)) {
-				max = groups[i].size();
-				maxIndex = i;
-			}
-		}
-		markedCluster[maxIndex] = 1;
-
-		b = false;
-
-		for(int i = 0; i < groups[maxIndex].size(); i++) {
-			p = groups[maxIndex][i];
-			if(markedPoint[p] == 0) {
-				offspring[p] = c;	
-				markedPoint[p] = 1;
-				b = true;
-			}
-		}
-
-		if(b == true) {
-			c++;
-		}
-		if(c > maxC) {
-			maxC = c;
-		}
-		if(c == m) {
-			c = 0;
-		}
-		counter++;
-	}
-	if(maxC < m) {
-		//printSolution(offspring, n);
-		for(int i = 0; i < n; i++) {
-			offspring[i] = p1[i];
 		}
 	}
 }
@@ -414,6 +362,8 @@ void centroidsToSolution(int* solution, double** centroid, const DataFrame* data
     }
 }
 
+/*Build the assignment matrix for two solutions (each represented as a set of centroids), i.e.,
+the distances between centroids of 2 different solutions */
 double** assignment(double** c1, double** c2, int m, int d) {
     double** matrix = new double*[m];
 
@@ -430,6 +380,8 @@ double** assignment(double** c1, double** c2, int m, int d) {
     return matrix;
 }
 
+/*Check if all clusters are populated, i.e., if no cluster is left empty.
+If this function returns true, we have a valid solution.*/
 bool allClustersPopulated(int* solution, int n, int m) {
     vector< vector<int> > v(m);
     for(int i = 0; i < n; i++) {
@@ -443,6 +395,7 @@ bool allClustersPopulated(int* solution, int n, int m) {
     return true;
 }
 
+/*Crossover: For each centroid of the offspring, we chose a random centroid among the centroids of the 2 parents*/
 void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
     const int n = dataFrame->getInstance().N;
     const int m = dataFrame->getInstance().M;
@@ -458,6 +411,7 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
 
     double** matrix = assignment(c1, c2, m, d);
 
+    /*Find the mininum assignment (full bipartite matching) -- here, dlib library function is called*/
     std::vector<long> matching = minAssignment(matrix, m);
 
     int r;
@@ -487,6 +441,7 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
     deleteMatrix(matrix, m);
 }
 
+/*Get the cardinality of each cluster in a given solution*/
 void getCardinality(int* cardinality, int* solution, int n, int m) {
     for(int i = 0; i < m; i++) {
         cardinality[i] = 0;
@@ -496,6 +451,7 @@ void getCardinality(int* cardinality, int* solution, int n, int m) {
     }
 }
 
+/*Get a random population of size $popSize*/
 vector<int*> getPopulation(const int popSize, DataFrame* dataFrame) {
     std::vector<int*> population;
     const int n = dataFrame->getInstance().N;
@@ -512,6 +468,10 @@ vector<int*> getPopulation(const int popSize, DataFrame* dataFrame) {
     return population;
 }
 
+/*Survivors selection: this function aims to select the best individuals to propagate. Its main purpose
+is to keep the best individuals when the $maxPopulation is achieved. This procedure determines the $sizePopulation
+individuals that will go on to the next generation, by discarding $maxPopulation - $sizePopulation individuals
+that are either clones or bad regarding the fitness*/
 vector<int*> selectSurvivors(HeapPdi* costHeap,
 	vector<int*> population,
 	vector<double>& solutionCost,
@@ -533,6 +493,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     for(int i = 0; i < maxPopulation; i++) {
         getCardinality(cardinality, population[i], n, m);
 
+        /*Check if solution already exist in population (clone detection)*/
         if(table->existItem(cardinality, solutionCost[i], m)) {
             heapClones->push_max(solutionCost[i], i);
         } else {
@@ -548,6 +509,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     delete [] cardinality;
     int j = 0;
     
+    /*Remove clones while they exist*/
     while((j < (maxPopulation-sizePopulation)) && (heapClones->getHeap().size() > 0)) {
         id = heapClones->front_max().second;
         heapClones->pop_max();
@@ -555,6 +517,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
         j++;
     }
 
+    /*If $sizePopulation not achieved, remove individuals that are not clones but have bad fitness*/
     while(j < (maxPopulation-sizePopulation)) {
         id = heapInd->front_max().second;
         heapInd->pop_max();
@@ -565,6 +528,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     HeapPdi* costHeapAux = new HeapPdi();
     int l = 0;
 
+    /*Get the survivors and delete the others*/
     for(int i = 0; i < maxPopulation; i++) {
         if(discarded[i] == 0) {
             newPopulation.push_back(population[i]);
@@ -577,6 +541,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     costHeap->setHeap(costHeapAux->getHeap());
     solutionCost.resize(sizePopulation);
 
+    /*Update solutions cost with remained individuals*/
     for(int i = 0; i < costHeap->getHeap().size(); i++) {
         solutionCost[costHeap->getHeap()[i].second] = costHeap->getHeap()[i].first;
     }
@@ -590,6 +555,10 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     return newPopulation;
 }
 
+/*Diversification: this function aims to ensure the diversity of the population. It is called whenever $itDiv
+iterations happen without improving the best solution. It is performed by eliminating all but the best $numKeep
+individuals of the population and creating 2x $numKeep new individuals as in the initialization phase
+(randomly generated and then submitted to local search)*/
 vector<int*> diversifyPopulation(HeapPdi* costHeap,
     vector<int*> population,
     vector<double>& solutionCost,
@@ -606,6 +575,7 @@ vector<int*> diversifyPopulation(HeapPdi* costHeap,
 
     HeapPdi* costHeapAux = new HeapPdi();
 
+    /*Keep the $numKeep best individuals*/
     for(int i = 0; i < numKeep; i++) {
         cost = costHeap->front_min().first;
         id = costHeap->front_min().second;
@@ -617,6 +587,7 @@ vector<int*> diversifyPopulation(HeapPdi* costHeap,
 
     vector<int*> randomIndividuals = getPopulation(numNew, dataFrame);
 
+    /*Generate $numNew new individuals (randomly)*/
     for(int i = 0; i < randomIndividuals.size(); i++) {
     	Solver* ind = createSolver(dataFrame, randomIndividuals[i]);
 		ind->localSearch(conflictGraph);
@@ -633,6 +604,9 @@ vector<int*> diversifyPopulation(HeapPdi* costHeap,
     return newPopulation;
 }
 
+/*Binary tournament selection: this function randomly selects 2 individuals (with uniform probability)
+from the population and keeps the one with the best fitness to set as one of the parents. Then,
+the same selection scheme is performed to set the second parent.*/
 int* tournamentSelection(vector<int*> pop, vector<double> solutionCost) {
     int* best = NULL;
     double indCost;
@@ -652,6 +626,8 @@ int* tournamentSelection(vector<int*> pop, vector<double> solutionCost) {
     return best;
 }
 
+/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+best solution found is correct*/
 double verifyCost(int* solution, DataFrame* dataFrame) {
 	int N = dataFrame->getInstance().N;
 	int M = dataFrame->getInstance().M;
@@ -690,6 +666,7 @@ double verifyCost(int* solution, DataFrame* dataFrame) {
 	return cost;
 }
 
+/*Check if the solver passed as argument if valid*/
 bool validSolverId() {
     if(solverId != MEAN_ID
         && solverId != MEDIAN_ID
@@ -702,6 +679,7 @@ bool validSolverId() {
     return true;
 }
 
+/*Check if the file passed as argument was successfully loaded*/
 bool validDataFrame(DataFrame* dataFrame) {
     if(dataFrame == NULL) {
         return false;
@@ -709,6 +687,7 @@ bool validDataFrame(DataFrame* dataFrame) {
     return true;
 }
 
+/*Validate both solver and file passed as arguments*/
 bool validInput(DataFrame* dataFrame) {
     if(validSolverId() && validDataFrame(dataFrame)) {
         return true;
@@ -716,6 +695,11 @@ bool validInput(DataFrame* dataFrame) {
     return false;
 }
 
+/*The GA loop of the system. Initially, the method generates a random population of individuals.
+Then, it applies successively a number of operators to select two parent individuals and combine them,
+yielding a new individual (offspring), which is enhanced by a local search procedure and then added to
+the population. Additionally, survivors selection and population diversification are applied when some
+criteria are reached.*/
 void demo(int seed, string fileName, int k) {
 	   
     srand(seed);
@@ -731,10 +715,19 @@ void demo(int seed, string fileName, int k) {
         vector<int> conflictGraph[n];
         imposeConflicts(annotated, dataFrame->getLabel(), conflictGraph, NUM_ANNOTATED);
 
+        /*The size of the population*/
         const int sizePopulation = 20;
+        
+        /*The maximum size a population can achieve (then survivors selection is performed)*/
         const int maxPopulation = 200;
+
+        /*The number of iterations without improvements that the algorithm will run*/
         const int itNoImprovement = 400;
+
+        /*The number of iterations without improvements determined to perform diversification*/
         const int itDiv = 100;
+
+        /*The maximum number of iterations that the algorithm will run*/
         const int maxIt = 1000;
 
         int it = 0;
@@ -749,8 +742,10 @@ void demo(int seed, string fileName, int k) {
         int* bestSolution = new int[n];
         std::vector<double> solutionCost;
 
+        /*Generate the initial population -- individuals are randomly generated*/
         population = getPopulation(20, dataFrame);
         
+        /*Submit initial population to education (local improvement)*/
         for(int i = 0; i < population.size(); i++) {
             Solver* ind = createSolver(dataFrame, population[i]);
             ind->localSearch(conflictGraph);
@@ -758,6 +753,8 @@ void demo(int seed, string fileName, int k) {
             costS = ind->getCost();
             costHeap->push_min(costS, i);
             solutionCost.push_back(costS);
+
+            /*Stores the solution if it is better than the best solution found so far*/
             if(costS < bestCost) {
                 bestCost = costS;
                 std::copy(ind->getSolution(), ind->getSolution() + n, bestSolution);
@@ -768,29 +765,40 @@ void demo(int seed, string fileName, int k) {
         while(((it-lastImprovement) < itNoImprovement) && (it < maxIt)) {
             
             int* offspring1 = new int[n];
+
+            /*Selects the first parent for crossover*/
             int* p1 = tournamentSelection(population, solutionCost);
+            
+            /*Selects the second parent for crossover*/
             int* p2 = tournamentSelection(population, solutionCost);
 
+            /*Perform crossover: generate a offspring, given two parents p1 and p2*/
             crossover(offspring1, p1, p2, dataFrame);
 
             Solver* off1 = createSolver(dataFrame, offspring1);
+
+            /*Offspring undergoes education (local improvement)*/
             off1->localSearch(conflictGraph);
             double off1Cost = off1->getCost();
 
+            /*Stores offspring if it is better than the best solution found so far*/
             if(off1Cost < bestCost) {
                 bestCost = off1Cost;
                 std::copy(off1->getSolution(), off1->getSolution() + n, bestSolution);
                 lastImprovement = it;
             }
 
+            /*Add individual to population*/
             population.push_back(off1->getSolution());
             costHeap->push_min(off1Cost, population.size() - 1);
             solutionCost.push_back(off1Cost);
 
+            /*If the size of population achieves $maxPopulation, then select survivors*/
             if(population.size() > maxPopulation) {
                 population = selectSurvivors(costHeap, population, solutionCost, sizePopulation, dataFrame);
             }
 
+            /*If $itDiv iterations happened without improving the best solution, then diversify population*/ 
             if( ((it-lastImprovement) >= itDiv) && ((it-lastDiv) >= itDiv) ) {
                 lastDiv = it;
                 population = diversifyPopulation(costHeap, population, solutionCost, sizePopulation, 2*sizePopulation, m, dataFrame, conflictGraph);
@@ -816,6 +824,7 @@ void demo(int seed, string fileName, int k) {
     }
 }
 
+/*Create a Solver instance*/
 Solver* createSolver(DataFrame* dataFrame, int* solution) {
     Solver* solver;
 
@@ -838,6 +847,7 @@ Solver* createSolver(DataFrame* dataFrame, int* solution) {
 
 int main(int argc, char** argv) {
 
+    /*Get the arguments passed by the user*/
     string fileName = argv[1];
     solverId = argv[2];
     int m = atoi(argv[3]);
