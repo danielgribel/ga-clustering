@@ -24,7 +24,7 @@ class CsgSolver: public Solver {
 	public:
 
 		/*CsgSolver constructor*/
-		CsgSolver(DataFrame* _dataFrame, int* _solution);
+		CsgSolver(DataFrame* _dataFrame, int* _solution, std::string solverId);
 		
 		/*CsgSolver destructor*/
 		~CsgSolver();
@@ -40,6 +40,10 @@ class CsgSolver: public Solver {
 		/*Calculate solution cost from scratch. Heavy processing, should be called only once,
 		when creating the Solver*/
 		void calculateCost();
+
+		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+		best solution found is correct*/
+		double verifyCost();
 };
 
 #endif

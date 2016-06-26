@@ -32,11 +32,18 @@ constants declaration, accuracy calculation for results, etc
 #include "Heap.h"
 #include "HashTable.h"
 #include "LinkedList.h"
+#include "Test.h"
 
 using namespace std;
 
 /*Stores the id of the chosen solver*/
 string solverId;
+
+/*Flag to enable tests*/
+#define RUN_TESTS true
+
+/*Flag to enable accuracy calculation*/
+bool accuracy = false;
 
 /*Declaration of a pair of integers*/
 #define pii pair<int, int>
@@ -70,12 +77,46 @@ const double PORC_ANNOTATED = 0.0;
 
 Solver* createSolver(DataFrame* dataFrame, int* solution);
 
-/*Print a solution represented by a partitioning (array representation)*/
+double evalSolution(int* solution, DataFrame* dataFrame);
+
+/*Print a solution represented by a partition (array representation)*/
 void printSolution(int* solution, int n) {
+    cout << endl << ">> Best solution found:" << endl;
 	for(int i = 0; i < n; i++) {
-		cout << solution[i] << ",";
+		cout << solution[i] << " ";
 	}
-	cout << endl;
+    cout << endl;
+}
+
+/*Prints the summary of results*/
+void printSummary(Solver* bestSolution, double elapsedSecs) {
+    
+    DataFrame* dataFrame = bestSolution->getDataFrame();
+    
+    printSolution(bestSolution->getSolution(), dataFrame->getInstance().N);
+
+    cout << endl << ">> Summary of results:" << endl;
+
+    cout << left << setw(dataFrame->getInstance().file.length()) << "Dataset" << "\t"
+                << setw(6) << "n" << "\t"
+                << setw(6) << "m" << "\t"
+                << setw(8) << "Solver" << "\t"
+                << setw(10) << "Obj. function" << "\t"
+                << setw(6) << "C-rand" << "\t"
+                << setw(6) << "Time (s)" << "\n";
+
+    cout << left << setw(0) << dataFrame->getInstance().file << "\t"
+                << setw(6) << dataFrame->getInstance().N << "\t"
+                << setw(6) << dataFrame->getInstance().M << "\t"
+                << setw(8) << bestSolution->getSolverId() << "\t"
+                << setw(10) << setprecision(8) << bestSolution->getCost() << "\t"
+                << setw(6) << setprecision(4) << evalSolution(bestSolution->getSolution(), dataFrame) << "\t"
+                << setw(6) << elapsedSecs << "\n";
+
+    if(RUN_TESTS) {
+        Test* test = new Test(bestSolution);
+        test->run();
+    }
 }
 
 /*Calculate the rand index, which is a measure for partitions agreement. Useful to test accuracy*/
@@ -93,8 +134,14 @@ double crand(int a, int b, int c, int d) {
 	return crandIndex;
 }
 
-void evalSolution(int* solution, int* label, DataFrame* dataFrame, string algorithm) {
+/*Evaluate solution accuracy*/
+double evalSolution(int* solution, DataFrame* dataFrame) {
+    if(!accuracy) {
+        return 0;
+    }
+
 	Instance instance = dataFrame->getInstance();
+    int* label = dataFrame->getLabel();
 
     int a = 0;
 	int b = 0;
@@ -140,7 +187,7 @@ void evalSolution(int* solution, int* label, DataFrame* dataFrame, string algori
 	c = c - a;
 	int d = instance.N*(instance.N-1)/2.0 - a - b - c;
 
-	cout << algorithm + " #crand: " << crand(a, b, c, d) << endl;
+	return crand(a, b, c, d);
 }
 
 /*Returns the position where a string occurs in a vector*/
@@ -177,7 +224,7 @@ DataFrame* load(string fileName, int m) {
 
     /*Abort if the file does not exist*/
     if ( !file.good() ) {
-        cout << "Error on file reading" << endl;
+        cout << "Error: File does not exist or is corrupted." << endl;
         return NULL;
     }
 
@@ -253,6 +300,10 @@ DataFrame* load(string fileName, int m) {
                 j++;
             }
         }
+    }
+
+    if(labels.size() == m) {
+        accuracy = true;
     }
 
     vector<pdi> closest;
@@ -452,8 +503,8 @@ void getCardinality(int* cardinality, int* solution, int n, int m) {
 }
 
 /*Get a random population of size $popSize*/
-vector<int*> getPopulation(const int popSize, DataFrame* dataFrame) {
-    std::vector<int*> population;
+vector<Solver*> getPopulation(const int popSize, DataFrame* dataFrame) {
+    std::vector<Solver*> population;
     const int n = dataFrame->getInstance().N;
     const int m = dataFrame->getInstance().M;
 
@@ -462,7 +513,8 @@ vector<int*> getPopulation(const int popSize, DataFrame* dataFrame) {
         for(int q = 0; q < n; q++) {
             p[q] = rand() % m + 0;
         }
-        population.push_back(p);
+        Solver* sol = createSolver(dataFrame, p);
+        population.push_back(sol);
     }
 
     return population;
@@ -472,9 +524,8 @@ vector<int*> getPopulation(const int popSize, DataFrame* dataFrame) {
 is to keep the best individuals when the $maxPopulation is achieved. This procedure determines the $sizePopulation
 individuals that will go on to the next generation, by discarding $maxPopulation - $sizePopulation individuals
 that are either clones or bad regarding the fitness*/
-vector<int*> selectSurvivors(HeapPdi* costHeap,
-	vector<int*> population,
-	vector<double>& solutionCost,
+vector<Solver*> selectSurvivors(HeapPdi* costHeap,
+	vector<Solver*> population,
 	int sizePopulation,
     DataFrame* dataFrame) {
 
@@ -483,7 +534,7 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
 
     HashTable* table = new HashTable();
     int maxPopulation = population.size();
-    vector<int*> newPopulation;
+    vector<Solver*> newPopulation;
     int* discarded = new int[maxPopulation];
     int id;
     HeapPdi* heapInd = new HeapPdi();
@@ -491,18 +542,18 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     int* cardinality = new int[m];
 
     for(int i = 0; i < maxPopulation; i++) {
-        getCardinality(cardinality, population[i], n, m);
+        getCardinality(cardinality, population[i]->getSolution(), n, m);
 
         /*Check if solution already exist in population (clone detection)*/
-        if(table->existItem(cardinality, solutionCost[i], m)) {
-            heapClones->push_max(solutionCost[i], i);
+        if(table->existItem(cardinality, population[i]->getCost(), m)) {
+            heapClones->push_max(population[i]->getCost(), i);
         } else {
             Item * anItem = new Item;
-            (*anItem).cost = solutionCost[i];
+            (*anItem).cost = population[i]->getCost();
             (*anItem).cardinality = cardinality;
             (*anItem).next = NULL;
             table->insertItem(anItem, m);
-            heapInd->push_max(solutionCost[i], i);
+            heapInd->push_max(population[i]->getCost(), i);
         }
         discarded[i] = 0;
     }
@@ -532,19 +583,13 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
     for(int i = 0; i < maxPopulation; i++) {
         if(discarded[i] == 0) {
             newPopulation.push_back(population[i]);
-            costHeapAux->push_min(solutionCost[i], l);
+            costHeapAux->push_min(population[i]->getCost(), l);
             l++;
         } else {
-            delete [] population[i];
+            delete population[i];
         }
     }
     costHeap->setHeap(costHeapAux->getHeap());
-    solutionCost.resize(sizePopulation);
-
-    /*Update solutions cost with remained individuals*/
-    for(int i = 0; i < costHeap->getHeap().size(); i++) {
-        solutionCost[costHeap->getHeap()[i].second] = costHeap->getHeap()[i].first;
-    }
 
     delete heapInd;
     delete heapClones;
@@ -559,17 +604,15 @@ vector<int*> selectSurvivors(HeapPdi* costHeap,
 iterations happen without improving the best solution. It is performed by eliminating all but the best $numKeep
 individuals of the population and creating 2x $numKeep new individuals as in the initialization phase
 (randomly generated and then submitted to local search)*/
-vector<int*> diversifyPopulation(HeapPdi* costHeap,
-    vector<int*> population,
-    vector<double>& solutionCost,
+vector<Solver*> diversifyPopulation(HeapPdi* costHeap,
+    vector<Solver*> population,
     const int numKeep,
     const int numNew,
     unsigned short m,
     DataFrame* dataFrame,
     vector<int>* conflictGraph) {
 
-    solutionCost.resize(numKeep + numNew);    
-    vector<int*> newPopulation;
+    vector<Solver*> newPopulation;
     double cost;
     int id;
 
@@ -582,19 +625,18 @@ vector<int*> diversifyPopulation(HeapPdi* costHeap,
         costHeapAux->push_min(cost, i);
         costHeap->pop_min();
         newPopulation.push_back(population[id]);
-        solutionCost[i] = cost;
     }
 
-    vector<int*> randomIndividuals = getPopulation(numNew, dataFrame);
+    vector<Solver*> randomIndividuals = getPopulation(numNew, dataFrame);
 
     /*Generate $numNew new individuals (randomly)*/
     for(int i = 0; i < randomIndividuals.size(); i++) {
-    	Solver* ind = createSolver(dataFrame, randomIndividuals[i]);
-		ind->localSearch(conflictGraph);
-        newPopulation.push_back(ind->getSolution());
-        cost = ind->getCost();
+    	//Solver* ind = createSolver(dataFrame, randomIndividuals[i]->getSolution());
+		//ind->localSearch(conflictGraph);
+        randomIndividuals[i]->localSearch(conflictGraph);
+        newPopulation.push_back(randomIndividuals[i]);
+        cost = randomIndividuals[i]->getCost();
         costHeapAux->push_min(cost, numKeep+i);
-        solutionCost[numKeep+i] = cost;
     }
 
     costHeap->setHeap(costHeapAux->getHeap());
@@ -607,8 +649,8 @@ vector<int*> diversifyPopulation(HeapPdi* costHeap,
 /*Binary tournament selection: this function randomly selects 2 individuals (with uniform probability)
 from the population and keeps the one with the best fitness to set as one of the parents. Then,
 the same selection scheme is performed to set the second parent.*/
-int* tournamentSelection(vector<int*> pop, vector<double> solutionCost) {
-    int* best = NULL;
+int* tournamentSelection(vector<Solver*> pop) {
+    Solver* best = NULL;
     double indCost;
     double bestCost = MAX_FLOAT;
     int r;
@@ -616,54 +658,14 @@ int* tournamentSelection(vector<int*> pop, vector<double> solutionCost) {
 
     for(int i = 0; i < 2; i++) {
         r = rand() % sizePopulation;
-        indCost = solutionCost[r];
+        indCost = pop[r]->getCost();
         if(indCost < bestCost) {
             best = pop[r];
             bestCost = indCost;
         }
     }
 
-    return best;
-}
-
-/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
-best solution found is correct*/
-double verifyCost(int* solution, DataFrame* dataFrame) {
-	int N = dataFrame->getInstance().N;
-	int M = dataFrame->getInstance().M;
-	int D = dataFrame->getInstance().D;
-	double** data = dataFrame->getData();
-
-	double centroid[M][D];
-	int sizes[M];
-
-	for(int i = 0; i < M; i++) {
-	    for(int j = 0; j < D; j++) {
-	    	centroid[i][j] = 0.0;
-	    }
-	    sizes[i] = 0;
-	}
-
-	for(int i = 0; i < N; i++) {
-		sizes[solution[i]] = sizes[solution[i]]+1;
-		for(int j = 0; j < D; j++) {
-			centroid[solution[i]][j] = centroid[solution[i]][j] + data[i][j];
-		}
-	}
-	
-	for(int i = 0; i < M; i++) {
-		for(int j = 0; j < D; j++) {
-			centroid[i][j] = (1.0*centroid[i][j])/sizes[i];	
-		}
-	}
-
-	double cost = 0.0;
-
-	for(int i = 0; i < N; i++) {
-		cost = cost + getDistance(data[i], centroid[solution[i]], D);
-	}
-
-	return cost;
+    return best->getSolution();
 }
 
 /*Check if the solver passed as argument if valid*/
@@ -703,6 +705,10 @@ criteria are reached.*/
 void demo(int seed, string fileName, int k) {
 	   
     srand(seed);
+    
+    //Start to count the running time
+    clock_t begin = clock();
+    
     DataFrame* dataFrame = load(fileName, k);
 
     if(validInput(dataFrame)) {
@@ -722,10 +728,10 @@ void demo(int seed, string fileName, int k) {
         const int maxPopulation = 200;
 
         /*The number of iterations without improvements that the algorithm will run*/
-        const int itNoImprovement = 400;
+        const int itNoImprovement = 500;
 
         /*The number of iterations without improvements determined to perform diversification*/
-        const int itDiv = 100;
+        const int itDiv = 200;
 
         /*The maximum number of iterations that the algorithm will run*/
         const int maxIt = 1000;
@@ -733,33 +739,27 @@ void demo(int seed, string fileName, int k) {
         int it = 0;
         int lastImprovement = 0;
         int lastDiv = 0;
-        double bestCost = MAX_FLOAT;
         double delta = 0.000000000;
         
-        vector<int*> population;
+        vector<Solver*> population;
         HeapPdi* costHeap = new HeapPdi();
         double costS;
-        int* bestSolution = new int[n];
-        std::vector<double> solutionCost;
 
         /*Generate the initial population -- individuals are randomly generated*/
         population = getPopulation(20, dataFrame);
-        
+        Solver* bestSolution = createSolver(dataFrame, population[0]->getSolution());
+
         /*Submit initial population to education (local improvement)*/
         for(int i = 0; i < population.size(); i++) {
-            Solver* ind = createSolver(dataFrame, population[i]);
-            ind->localSearch(conflictGraph);
-            population[i] = ind->getSolution();
-            costS = ind->getCost();
+            population[i]->localSearch(conflictGraph);
+            costS = population[i]->getCost();
             costHeap->push_min(costS, i);
-            solutionCost.push_back(costS);
 
             /*Stores the solution if it is better than the best solution found so far*/
-            if(costS < bestCost) {
-                bestCost = costS;
-                std::copy(ind->getSolution(), ind->getSolution() + n, bestSolution);
+            if(costS < bestSolution->getCost()) {
+                bestSolution = population[i];
             }
-            printf("r(%d) = %.15f\n", i, costS);
+            printf("%d) = %.15f\n", i, costS);
         }
 
         while(((it-lastImprovement) < itNoImprovement) && (it < maxIt)) {
@@ -767,10 +767,10 @@ void demo(int seed, string fileName, int k) {
             int* offspring1 = new int[n];
 
             /*Selects the first parent for crossover*/
-            int* p1 = tournamentSelection(population, solutionCost);
+            int* p1 = tournamentSelection(population);
             
             /*Selects the second parent for crossover*/
-            int* p2 = tournamentSelection(population, solutionCost);
+            int* p2 = tournamentSelection(population);
 
             /*Perform crossover: generate a offspring, given two parents p1 and p2*/
             crossover(offspring1, p1, p2, dataFrame);
@@ -782,45 +782,48 @@ void demo(int seed, string fileName, int k) {
             double off1Cost = off1->getCost();
 
             /*Stores offspring if it is better than the best solution found so far*/
-            if(off1Cost < bestCost) {
-                bestCost = off1Cost;
-                std::copy(off1->getSolution(), off1->getSolution() + n, bestSolution);
+            if(off1Cost < bestSolution->getCost()) {
+                bestSolution = off1;
                 lastImprovement = it;
             }
 
             /*Add individual to population*/
-            population.push_back(off1->getSolution());
+            population.push_back(off1);
             costHeap->push_min(off1Cost, population.size() - 1);
-            solutionCost.push_back(off1Cost);
 
             /*If the size of population achieves $maxPopulation, then select survivors*/
             if(population.size() > maxPopulation) {
-                population = selectSurvivors(costHeap, population, solutionCost, sizePopulation, dataFrame);
+                population = selectSurvivors(costHeap, population, sizePopulation, dataFrame);
+                bestSolution = population[costHeap->front_min().second];
             }
 
             /*If $itDiv iterations happened without improving the best solution, then diversify population*/ 
             if( ((it-lastImprovement) >= itDiv) && ((it-lastDiv) >= itDiv) ) {
                 lastDiv = it;
-                population = diversifyPopulation(costHeap, population, solutionCost, sizePopulation, 2*sizePopulation, m, dataFrame, conflictGraph);
-                if(costHeap->front_min().first < bestCost) {
+                population = diversifyPopulation(costHeap, population, sizePopulation, 2*sizePopulation, m, dataFrame, conflictGraph);
+                if(costHeap->front_min().first < bestSolution->getCost()) {
                     lastImprovement = it;
-                    bestCost = costHeap->front_min().first;
-                    std::copy(population[costHeap->front_min().second], population[costHeap->front_min().second] + n, bestSolution);
                 }
+                bestSolution = population[costHeap->front_min().second];
             }
 
             it++;
-            printf("%d) %.15f %s %d %s %d \n", it, bestCost, "size_pop =", (int)population.size(), "last_imp =", lastImprovement);
+            printf("%d) %.15f %s %d %s %d \n", it, bestSolution->getCost(), "size_pop =", (int)population.size(), "last_imp =", lastImprovement);
         }
+        
+        // Stop the running time clock
+        double elapsedSecs = double(clock() - begin) / CLOCKS_PER_SEC;
+        
+        printSummary(bestSolution, elapsedSecs);
 
-        double costVerified = verifyCost(bestSolution, dataFrame);
-        printf("%.15f ", bestCost);
-        //printSolution(bestSolution, n);
-        printf("%.15f ", costVerified);
+        /*double costVerified = verifyCost(bestSolution, dataFrame);
+        printf("%.15f ", costVerified);*/
         
         delete [] annotated;
-        delete [] bestSolution;
         delete dataFrame;
+        for(int i = 0; i < population.size(); i++) {
+            delete population[i];
+        }
     }
 }
 
@@ -830,13 +833,13 @@ Solver* createSolver(DataFrame* dataFrame, int* solution) {
 
     /*Create a Solver instance. The object to be created must be of a class that inherit Solver*/
     if(solverId == MEAN_ID) {
-        solver = new KMeansSolver(dataFrame, solution);
+        solver = new KMeansSolver(dataFrame, solution, MEAN_ID);
     } else if(solverId == MEDIAN_ID) {
-        solver = new KMediansSolver(dataFrame, solution);
+        solver = new KMediansSolver(dataFrame, solution, MEDIAN_ID);
     } else if(solverId == MEDOID_ID) {
-        solver = new KMedoidsSolver(dataFrame, solution);
+        solver = new KMedoidsSolver(dataFrame, solution, MEDOID_ID);
     } else if(solverId == CSG_ID) {
-        solver = new CsgSolver(dataFrame, solution);
+        solver = new CsgSolver(dataFrame, solution, CSG_ID);
     } else {
         solver = NULL;
         cout << "Invalid solver. Please, enter a valid option: mean, median, medoid, csg." << endl;
@@ -852,17 +855,8 @@ int main(int argc, char** argv) {
     solverId = argv[2];
     int m = atoi(argv[3]);
     
-    //Start to count the running time
-    clock_t begin = clock();
-
     //Call the main function, which will perform the genetic loop
     demo(1607, fileName, m);
-
-    //Stop the running time clock
-    double elapsedSecs = double(clock() - begin) / CLOCKS_PER_SEC;
-        
-    //Print the total time of execution
-    cout << "Run time = " << elapsedSecs << endl;
 
     return 0;
 }

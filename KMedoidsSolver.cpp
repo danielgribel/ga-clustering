@@ -27,8 +27,8 @@ using namespace std;
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
 /*KMedoidsSolver constructor*/
-KMedoidsSolver::KMedoidsSolver(DataFrame* dataFrame, int* solution)
-: KCenterSolver(dataFrame, solution) {
+KMedoidsSolver::KMedoidsSolver(DataFrame* dataFrame, int* solution, string solverId)
+: KCenterSolver(dataFrame, solution, solverId) {
 	createCenters();
 	calculateCost();
 }
@@ -352,4 +352,75 @@ void KMedoidsSolver::swap(int p1, int p2) {
 			this->centroid[i][j] = data[centers[i]][j];
 		}
 	}
+}
+
+/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+best solution found is correct*/
+double KMedoidsSolver::verifyCost() {
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
+
+	double** c = new double*[M];
+
+	vector<int>* cls = new vector<int>[M];
+
+	for(int i = 0; i < M; i++) {
+		c[i] = new double[D];
+	}
+
+	for(int i = 0; i < M; i++) {
+	    for(int j = 0; j < D; j++) {
+	    	c[i][j] = 0.0;
+	    }
+	}
+
+	for(int i = 0; i < N; i++) {
+		cls[this->solution[i]].push_back(i);
+	}
+
+	for(int i = 0; i < M; i++) {
+		for(int j = 0; j < D; j++) {
+			c[i][j] = getMedian(cls[i], j);
+		}
+	}
+
+	double min;
+	double dist;
+	int* centers = new int [M];
+
+	for(int i = 0; i < M; i++) {
+		min = MAX_FLOAT;
+
+		/*Setting the real centroid as the closest point to the artificial centroid calculated above*/
+		for(int k = 0; k < cls[i].size(); k++) {
+			dist = getDistance(data[cls[i][k]], c[i], D);
+			if(dist < min) {
+				min = dist;
+				centers[i] = cls[i][k];
+			}
+		}
+	}
+
+	for(int i = 0; i < M; i++) {
+		for(int j = 0; j < D; j++) {
+			c[i][j] = data[centers[i]][j];
+		}
+	}
+
+	double cst = 0.0;
+
+	for(int i = 0; i < N; i++) {
+		cst = cst + getDistance(data[i], c[this->solution[i]], D);
+	}
+
+	for(int i = 0; i < M; i++) {
+		delete [] c[i];
+	}
+	delete [] c;
+	delete [] cls;
+	delete [] centers;
+
+	return cst;
 }

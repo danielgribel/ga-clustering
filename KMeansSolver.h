@@ -31,7 +31,7 @@ class KMeansSolver: public KCenterSolver {
 	public:
 		
 		/*KMeansSolver constructor*/
-		KMeansSolver(DataFrame* data, int* solution);
+		KMeansSolver(DataFrame* data, int* solution, std::string solverId);
 		
 		/*KMeansSolver destructor*/
 		~KMeansSolver();
@@ -57,6 +57,10 @@ class KMeansSolver: public KCenterSolver {
 
 		/*Apply swap move between points p1 and p2 (p1 is moved to p2 cluster and p2 is moved to p1 cluster)*/
 		void swap(int p1, int p2);
+
+		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+		best solution found is correct*/
+		double verifyCost();
 };
 
 #endif

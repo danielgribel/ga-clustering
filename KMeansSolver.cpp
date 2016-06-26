@@ -24,8 +24,8 @@ to be a representative point (point belonging to the dataset).
 using namespace std;
 
 /*KCenterSolver constructor*/
-KMeansSolver::KMeansSolver(DataFrame* dataFrame, int* solution)
-: KCenterSolver(dataFrame, solution) {
+KMeansSolver::KMeansSolver(DataFrame* dataFrame, int* solution, string solverId)
+: KCenterSolver(dataFrame, solution, solverId) {
 	createCenters();
 	calculateCost();
 }
@@ -137,4 +137,56 @@ void KMeansSolver::swap(int p1, int p2) {
 		this->centroid[c1][i] = (1.0*this->sumFeatures[c1][i])/this->cardinality[c1];
 		this->centroid[c2][i] = (1.0*this->sumFeatures[c2][i])/this->cardinality[c2];
 	}
+}
+
+/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+best solution found is correct*/
+double KMeansSolver::verifyCost() {
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
+
+	double** c = new double* [M];
+
+	for(int i = 0; i < M; i++) {
+	    c[i] = new double [D];
+	}
+
+	int* sizes = new int [M];
+
+	for(int i = 0; i < M; i++) {
+	    for(int j = 0; j < D; j++) {
+	    	c[i][j] = 0.0;
+	    }
+	    sizes[i] = 0;
+	}
+
+	for(int i = 0; i < N; i++) {
+		sizes[this->solution[i]] = sizes[this->solution[i]] + 1;
+		for(int j = 0; j < D; j++) {
+			c[this->solution[i]][j] = c[this->solution[i]][j] + data[i][j];
+		}
+	}
+	
+	for(int i = 0; i < M; i++) {
+		for(int j = 0; j < D; j++) {
+			c[i][j] = (1.0*c[i][j])/sizes[i];	
+		}
+	}
+
+	double cst = 0.0;
+
+	for(int i = 0; i < N; i++) {
+		cst = cst + getDistance(data[i], c[this->solution[i]], D);
+	}
+
+	delete [] sizes;
+
+	for(int i = 0; i < M; i++) {
+		delete [] c[i];
+	}
+	delete [] c;
+
+	return cst;
 }

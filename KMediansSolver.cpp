@@ -21,8 +21,8 @@ to be a representative point (point belonging to the dataset).
 using namespace std;
 
 /*KMeansSolver constructor*/
-KMediansSolver::KMediansSolver(DataFrame* dataFrame, int* solution)
-: KCenterSolver(dataFrame, solution) {
+KMediansSolver::KMediansSolver(DataFrame* dataFrame, int* solution, string solverId)
+: KCenterSolver(dataFrame, solution, solverId) {
 	createCenters();
 	calculateCost();
 }
@@ -215,4 +215,51 @@ void KMediansSolver::swap(int p1, int p2) {
 		this->centroid[c1][j] = getMedian(this->clusters[c1], j);
 		this->centroid[c2][j] = getMedian(this->clusters[c2], j);
 	}
+}
+
+/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+best solution found is correct*/
+double KMediansSolver::verifyCost() {
+	int N = this->dataFrame->getInstance().N;
+	int M = this->dataFrame->getInstance().M;
+	int D = this->dataFrame->getInstance().D;
+	double** data = this->dataFrame->getData();
+
+	double** c = new double*[M];
+
+	vector<int>* cls = new vector<int>[M];
+
+	for(int i = 0; i < M; i++) {
+		c[i] = new double[D];
+	}
+
+	for(int i = 0; i < M; i++) {
+	    for(int j = 0; j < D; j++) {
+	    	c[i][j] = 0.0;
+	    }
+	}
+
+	for(int i = 0; i < N; i++) {
+		cls[this->solution[i]].push_back(i);
+	}
+
+	for(int i = 0; i < M; i++) {
+		for(int j = 0; j < D; j++) {
+			c[i][j] = getMedian(cls[i], j);
+		}
+	}
+
+	double cst = 0.0;
+
+	for(int i = 0; i < N; i++) {
+		cst = cst + getDistance(data[i], c[this->solution[i]], D);
+	}
+
+	for(int i = 0; i < M; i++) {
+		delete [] c[i];
+	}
+	delete [] c;
+	delete [] cls;
+
+	return cst;
 }

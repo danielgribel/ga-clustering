@@ -33,7 +33,7 @@ class KCenterSolver: public Solver {
 	public:
 
 		/*KCenterSolver constructor*/
-		KCenterSolver(DataFrame* data, int* solution);
+		KCenterSolver(DataFrame* data, int* solution, std::string solverId);
 		
 		/*KCenterSolver destructor*/
 		~KCenterSolver();
@@ -72,6 +72,10 @@ class KCenterSolver: public Solver {
 		
 		/*Calculate solution cost from scratch*/
 		void calculateCost();
+
+		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+		best solution found is correct*/
+		virtual double verifyCost() = 0;
 };
 
 #endif

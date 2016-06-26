@@ -31,7 +31,7 @@ class KMediansSolver: public KCenterSolver {
 	public:
 
 		/*KMeansSolver constructor*/
-		KMediansSolver(DataFrame* dataFrame, int* solution);
+		KMediansSolver(DataFrame* dataFrame, int* solution, std::string solverId);
 		
 		/*KMeansSolver destructor*/
 		~KMediansSolver();
@@ -67,6 +67,10 @@ class KMediansSolver: public KCenterSolver {
 		
 		/*Update clusters for swap move. It adds point p1 to c2 and p2 to c1*/
 		void updateClusters(int p1, int p2, int c1, int c2);
+
+		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+		best solution found is correct*/
+		double verifyCost();
 };
 
 #endif

@@ -27,9 +27,10 @@ using namespace std;
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
 /*KCenterSolver constructor*/
-KCenterSolver::KCenterSolver(DataFrame* dataFrame, int* solution) {
+KCenterSolver::KCenterSolver(DataFrame* dataFrame, int* solution, std::string solverId) {
 	setDataFrame(dataFrame);
 	setSolution(solution);
+	setSolverId(solverId);
 }
 
 /*KCenterSolver destructor*/

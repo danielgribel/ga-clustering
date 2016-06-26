@@ -23,6 +23,11 @@ void Solver::setDataFrame(DataFrame* newDataFrame) {
 	this->dataFrame = newDataFrame;
 }
 
+/*Set the solver identification*/
+void Solver::setSolverId(std::string asolverId) {
+	this->solverId = asolverId;
+}
+
 /*Check if is possible to perform a move. Possible reasons for move prohibition:
 - The move leaves a cluster empty
 - The move breaks some a-priori classification rule (when working with supervised classification)*/

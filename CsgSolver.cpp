@@ -19,9 +19,10 @@ same cluster.
 using namespace std;
 
 /*CsgSolver constructor*/
-CsgSolver::CsgSolver(DataFrame* _dataFrame, int* _solution) {
+CsgSolver::CsgSolver(DataFrame* _dataFrame, int* _solution, string solverId) {
 	setDataFrame(_dataFrame);
 	setSolution(_solution);
+	setSolverId(solverId);
 	calculateCost();
 
 	int n = this->dataFrame->getInstance().N;
@@ -130,4 +131,22 @@ void CsgSolver::calculateCost() {
 			}
 		}
 	}
+}
+
+/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+best solution found is correct*/
+double CsgSolver::verifyCost() {
+	int n = this->dataFrame->getInstance().N;
+	double** sim = this->dataFrame->getSim();
+	double cst = 0.0;
+
+	for(int i = 0; i < n; i++) {
+		for(int j = i+1; j < n; j++) {
+			if(this->solution[i] == this->solution[j]) {
+				cst = cst + sim[i][j];
+			}
+		}
+	}
+
+	return cst;
 }

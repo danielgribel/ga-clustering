@@ -16,6 +16,8 @@ stores a solution, its cost, and the cardinality of each cluster (group) of the 
 
 #include <algorithm>
 #include <limits>
+#include <string>
+
 #include "Util.h"
 #include "DataFrame.h"
 
@@ -35,6 +37,9 @@ class Solver {
 		/*The cardinality of each cluster of the solution*/
 		int* cardinality;
 
+		/*A label identifying which solver is being used*/
+		std::string solverId;
+
 	public:
 		
 		/*Get the current solution the solver is working with*/
@@ -45,6 +50,9 @@ class Solver {
         
 		/*Get the cardinality of each cluster of the solution*/
         int* getCardinality() { return this->cardinality; };
+
+        /*Get the solver identification*/
+        std::string getSolverId() { return this->solverId; };
         
         /*Get the data frame*/
         DataFrame* getDataFrame() const { return this->dataFrame; };
@@ -68,6 +76,13 @@ class Solver {
 		- The move leaves a cluster empty
 		- The move breaks some a-priori classification rule (when working with supervised classification)*/
 		bool shouldMove(std::vector<int> conflicts, int destCluster, int p);
+
+		/*Set the solver identification*/
+		void setSolverId(std::string asolverId);
+
+		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
+		best solution found is correct*/
+		virtual double verifyCost() = 0;
 };
 
 #endif
