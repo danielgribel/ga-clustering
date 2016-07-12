@@ -492,6 +492,27 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
     deleteMatrix(matrix, m);
 }
 
+/*Swap (exchange) the assignment for two data points at positions i and j*/
+void swap(int* v, const int i, const int j) {
+    int t;
+    t = v[i];
+    v[i] = v[j];
+    v[j] = t;
+}
+
+/*Mutate a solution with a rounding swap*/
+void mutation(int* s0, int* s, int k, int n) {
+    int* randItems = new int[n];
+    for(int i = 0; i < n; i++) {
+        s[i] = s0[i];
+    }
+    shuffle(randItems, n);
+    for(int i = 0; i < 2*k; i = i+2) {
+        swap(s, randItems[i], randItems[i+1]);
+    }
+    delete [] randItems;
+}
+
 /*Get the cardinality of each cluster in a given solution*/
 void getCardinality(int* cardinality, int* solution, int n, int m) {
     for(int i = 0; i < m; i++) {
@@ -733,6 +754,9 @@ void demo(int seed, string fileName, int k) {
         /*The number of iterations without improvements determined to perform diversification*/
         const int itDiv = 200;
 
+        /*The number of exchanges on rounding mutation*/
+        const int mutationStrength = 20;
+
         /*The maximum number of iterations that the algorithm will run*/
         const int maxIt = 1000;
 
@@ -765,6 +789,7 @@ void demo(int seed, string fileName, int k) {
         while(((it-lastImprovement) < itNoImprovement) && (it < maxIt)) {
             
             int* offspring1 = new int[n];
+            int* offspring2 = new int[n];
 
             /*Selects the first parent for crossover*/
             int* p1 = tournamentSelection(population);
@@ -779,17 +804,30 @@ void demo(int seed, string fileName, int k) {
 
             /*Offspring undergoes education (local improvement)*/
             off1->localSearch(conflictGraph);
-            double off1Cost = off1->getCost();
 
             /*Stores offspring if it is better than the best solution found so far*/
-            if(off1Cost < bestSolution->getCost()) {
+            if(off1->getCost() < bestSolution->getCost()) {
                 bestSolution = off1;
                 lastImprovement = it;
             }
 
-            /*Add individual to population*/
+            /*Apply mutation on offspring*/
+            mutation(off1->getSolution(), offspring2, mutationStrength, n);
+
+            Solver* off2 = createSolver(dataFrame, offspring2);
+
+            if(off2->getCost() < bestSolution->getCost()) {
+                bestSolution = off2;
+                lastImprovement = it;
+            }
+
+            /*Add offspring to population*/
             population.push_back(off1);
-            costHeap->push_min(off1Cost, population.size() - 1);
+            costHeap->push_min(off1->getCost(), population.size() - 1);
+
+            /*Add mutated to population*/
+            population.push_back(off2);
+            costHeap->push_min(off2->getCost(), population.size() - 1);
 
             /*If the size of population achieves $maxPopulation, then select survivors*/
             if(population.size() > maxPopulation) {
