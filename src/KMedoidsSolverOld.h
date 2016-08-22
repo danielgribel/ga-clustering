@@ -1,12 +1,12 @@
 /************************************************************************************
-KMedoidsSolver.h
-KMedoidsSolver
+KMedoidsSolverOld.h
+KMedoidsSolverOld
 
 Created by Daniel Gribel
 
-This header file contains the KMedoidsSolver class declaration.
+This header file contains the KMedoidsSolverOld class declaration.
 
-The KMedoidsSolver class represents an optimization solver that considers the medoid point
+The KMedoidsSolverOld class represents an optimization solver that considers the medoid point
 of each cluster as a centroid. Given an initial solution, it applies local improvements
 in order to minimize the distance of each point to the correspondent centroid -- in this
 case, the medoid point inside the cluster.
@@ -20,7 +20,7 @@ that minimizes the distance for each other point within the cluster.
 
 #include "KCenterSolver.h"
 
-class KMedoidsSolver: public KCenterSolver {
+class KMedoidsSolverOld: public KCenterSolver {
 	
 	private:
 
@@ -30,26 +30,22 @@ class KMedoidsSolver: public KCenterSolver {
 		/*For each data point $x, the sum of distances from each data point inside the cluster to $x*/
 		std::vector<double>* sumDist;
 
-		int bestMedoid1;
-		
-		int bestMedoid2;
-
 		void setDistances();
 
 	public:
 
-		/*KMedoidsSolver constructor*/
-		KMedoidsSolver(DataFrame* dataFrame, int* solution, std::string solverId);
+		/*KMedoidsSolverOld constructor*/
+		KMedoidsSolverOld(DataFrame* dataFrame, int* solution, std::string solverId);
 		
-		/*KMedoidsSolver destructor*/
-		~KMedoidsSolver();
+		/*KMedoidsSolverOld destructor*/
+		~KMedoidsSolverOld();
 
 		/*Get the list of elements belonging to each cluster*/
 		std::vector<int>* getClusters() const;
 
 
 		/*Get the sum of distances*/
-		std::vector<double>* getSumDist() const { return this->sumDist; }
+		std::vector<double>* getSumDist() const;
 
 		/*Given the j-th cluster, get the median point, i.e., the median point for each feature,
 		which leads to a point that may not be a representative*/

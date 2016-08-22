@@ -98,18 +98,18 @@ void printSummary(Solver* bestSolution, double elapsedSecs) {
     cout << endl << ">> Summary of results:" << endl;
 
     cout << left << setw(dataFrame->getInstance().file.length()) << "Dataset" << "\t"
-                << setw(6) << "n" << "\t"
-                << setw(6) << "m" << "\t"
+                << setw(2) << "n" << "\t"
+                << setw(2) << "m" << "\t"
                 << setw(8) << "Solver" << "\t"
-                << setw(10) << "Obj. function" << "\t"
+                << setw(6) << "Obj function" << "\t"
                 << setw(6) << "C-rand" << "\t"
                 << setw(6) << "Time (s)" << "\n";
 
     cout << left << setw(0) << dataFrame->getInstance().file << "\t"
-                << setw(6) << dataFrame->getInstance().N << "\t"
-                << setw(6) << dataFrame->getInstance().M << "\t"
+                << setw(2) << dataFrame->getInstance().N << "\t"
+                << setw(2) << dataFrame->getInstance().M << "\t"
                 << setw(8) << bestSolution->getSolverId() << "\t"
-                << setw(10) << setprecision(8) << bestSolution->getCost() << "\t"
+                << setw(6) << setprecision(8) << bestSolution->getCost() << "\t"
                 << setw(6) << setprecision(4) << evalSolution(bestSolution->getSolution(), dataFrame) << "\t"
                 << setw(6) << elapsedSecs << "\n";
 
@@ -484,6 +484,7 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
         }
         centroidsToSolution(offspring1, c3, dataFrame);
         validOffspring = allClustersPopulated(offspring1, n, m);
+        /*std::cout << "validOffspring = " << validOffspring << std::endl;*/
     }
 
     deleteMatrix(c1, m);
@@ -530,12 +531,12 @@ vector<Solver*> getPopulation(const int popSize, DataFrame* dataFrame) {
     const int m = dataFrame->getInstance().M;
 
     for(int i = 0; i < popSize; i++) {
-        int* p = new int[n];
-        for(int q = 0; q < n; q++) {
-            p[q] = rand() % m + 0;
+        int* assignment = new int[n];
+        for(int j = 0; j < n; j++) {
+            assignment[j] = rand() % m + 0;
         }
-        Solver* sol = createSolver(dataFrame, p);
-        population.push_back(sol);
+        Solver* solution = createSolver(dataFrame, assignment);
+        population.push_back(solution);
     }
 
     return population;
@@ -652,8 +653,6 @@ vector<Solver*> diversifyPopulation(HeapPdi* costHeap,
 
     /*Generate $numNew new individuals (randomly)*/
     for(int i = 0; i < randomIndividuals.size(); i++) {
-    	//Solver* ind = createSolver(dataFrame, randomIndividuals[i]->getSolution());
-		//ind->localSearch(conflictGraph);
         randomIndividuals[i]->localSearch(conflictGraph);
         newPopulation.push_back(randomIndividuals[i]);
         cost = randomIndividuals[i]->getCost();
@@ -776,17 +775,18 @@ void demo(int seed, string fileName, int k) {
         /*Submit initial population to education (local improvement)*/
         for(int i = 0; i < population.size(); i++) {
             population[i]->localSearch(conflictGraph);
-            costS = population[i]->getCost();
-            costHeap->push_min(costS, i);
+            costHeap->push_min(population[i]->getCost(), i);
 
             /*Stores the solution if it is better than the best solution found so far*/
-            if(costS < bestSolution->getCost()) {
+            if(population[i]->getCost() < bestSolution->getCost()) {
                 bestSolution = population[i];
             }
-            printf("%d) = %.15f\n", i, costS);
+
+            printf("%d) = %.15f\n", i, population[i]->getCost());
         }
 
-        while(((it-lastImprovement) < itNoImprovement) && (it < maxIt)) {
+        while(it < 1000) {
+        //while(((it-lastImprovement) < itNoImprovement) && (it < maxIt)) {
             
             int* offspring1 = new int[n];
             int* offspring2 = new int[n];
@@ -815,6 +815,7 @@ void demo(int seed, string fileName, int k) {
             mutation(off1->getSolution(), offspring2, mutationStrength, n);
 
             Solver* off2 = createSolver(dataFrame, offspring2);
+            //off2->localSearch(conflictGraph);
 
             if(off2->getCost() < bestSolution->getCost()) {
                 bestSolution = off2;
