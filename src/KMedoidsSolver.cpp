@@ -98,6 +98,9 @@ void KMedoidsSolver::updateClusters(int p1, int p2, int c1, int c2) {
 
 	this->clusters[c1][q1] = p2;
 	this->clusters[c2][q2] = p1;
+
+	delete [] this->sumDist;
+	setDistances();
 }
 
 /*Set the centroids. Given a solution, it calculates the centroids (medoid points within each cluster)*/
@@ -242,10 +245,68 @@ void KMedoidsSolver::relocate(int p, int c2) {
 	}
 }
 
+void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
+	int d = this->dataFrame->getInstance().D;
+	int n = this->dataFrame->getInstance().N;
+	int c1 = this->solution[p1];
+	int c2 = this->solution[p2];
+
+	double** data = this->dataFrame->getData();
+	double** sim = this->dataFrame->getSim();
+
+	int y1 = 0;
+	int y2 = 0;
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		if(this->clusters[c1][i] == p1) {
+			y1 = i;
+		}
+	}
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		if(this->clusters[c2][i] == p2) {
+			y2 = i;
+		}
+	}
+
+	vector<int> cl1 = this->clusters[c1];
+	vector<int> cl2 = this->clusters[c2];
+
+	double min = MAX_FLOAT;
+
+	for(int i = 0; i < sumDist[c1].size(); i++) {
+		if(i != y1 && (sumDist[c1][i] - sim[cl1[i]][p1] + sim[cl1[i]][p2] < min)) {
+			this->bestMedoid1 = cl1[i];
+			min = sumDist[c1][i] - sim[cl1[i]][p1] + sim[cl1[i]][p2];
+		}
+	}
+
+	min = 0.0;
+	this->bestMedoid2 = p1;
+	
+	//sum of distances from $p to every data point in c2
+	for(int i = 0; i < sumDist[c2].size(); i++) {
+		min = min + sim[p1][cl2[i]];
+	}
+	min = min - sim[p1][p2];
+
+	for(int i = 0; i < sumDist[c2].size(); i++) {
+		if(sumDist[c2][i] + sim[cl2[i]][p1] - sim[cl2[i]][p2] < min) {
+			this->bestMedoid2 = cl2[i];
+			min = sumDist[c2][i] + sim[cl2[i]][p1] - sim[cl2[i]][p2];
+		}
+	}
+
+	for(int j = 0; j < d; j++) {
+		newCentroid1[j] = data[this->bestMedoid1][j];
+		newCentroid2[j] = data[this->bestMedoid2][j];
+	}
+}
+
 /*Calculate the new centroids (medoid points within each cluster) if a swap move is performed.
 It does not change the current solution, but only obtain the new centroids that would be
 resulted from a swap move*/
-void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
+/*void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, double* newCentroid2) {
 	int d = this->dataFrame->getInstance().D;
 	int n = this->dataFrame->getInstance().N;
 	int c1 = this->solution[p1];
@@ -304,10 +365,24 @@ void KMedoidsSolver::updateCentroidsSwap(int p1, int p2, double* newCentroid1, d
 		newCentroid1[j] = data[center1][j];
 		newCentroid2[j] = data[center2][j];
 	}
+}*/
+
+void KMedoidsSolver::swap(int p1, int p2) {
+	int d = this->dataFrame->getInstance().D;
+	int c1 = this->solution[p1];
+	int c2 = this->solution[p2];
+	double** data = this->dataFrame->getData();
+
+	updateClusters(p1, p2, c1, c2);
+
+	for(int j = 0; j < d; j++) {
+		this->centroid[c1][j] = data[this->bestMedoid1][j];
+		this->centroid[c2][j] = data[this->bestMedoid2][j];
+	}
 }
 
 /*Apply swap move between points p1 and p2 (p1 is moved to p2 cluster and p2 is moved to p1 cluster)*/
-void KMedoidsSolver::swap(int p1, int p2) {
+/*void KMedoidsSolver::swap(int p1, int p2) {
 	int N = this->dataFrame->getInstance().N;
 	int M = this->dataFrame->getInstance().M;
 	int D = this->dataFrame->getInstance().D;
@@ -330,7 +405,7 @@ void KMedoidsSolver::swap(int p1, int p2) {
 	for(int i = 0; i < M; i++) {
 		min = MAX_FLOAT;
 
-		/*Setting the real centroid as the closest point to the artificial centroid calculated above*/
+		//Setting the real centroid as the closest point to the artificial centroid calculated above
 		for(int k = 0; k < this->clusters[i].size(); k++) {
 			dist = getDistance(data[this->clusters[i][k]], this->centroid[i], D);
 			if(dist < min) {
@@ -345,7 +420,7 @@ void KMedoidsSolver::swap(int p1, int p2) {
 			this->centroid[i][j] = data[centers[i]][j];
 		}
 	}
-}
+}*/
 
 /*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
 best solution found is correct*/
