@@ -69,10 +69,10 @@ bool accuracy = false;
 /*Solver id for CsgSolver*/
 #define CSG_ID "csg"
 
+#define EPS              (0.00000001)
+
 /*Max value for a float numer (used as infinite)*/
 const double MAX_FLOAT = std::numeric_limits<double>::max();
-
-#define EPS              (0.00000001)
 
 /*The porcentage of items used as training set -- Used only for classification purpose*/
 const double PORC_ANNOTATED = 0.0;
@@ -91,7 +91,7 @@ void printSolution(int* solution, int n) {
 }
 
 /*Prints the summary of results*/
-void printSummary(Solver* bestSolution, double elapsedSecs) {
+/*void printSummary(Solver* bestSolution, double elapsedSecs) {
     
     DataFrame* dataFrame = bestSolution->getDataFrame();
     
@@ -114,6 +114,36 @@ void printSummary(Solver* bestSolution, double elapsedSecs) {
                 << setw(6) << setprecision(8) << bestSolution->getCost() << "\t"
                 << setw(6) << setprecision(4) << evalSolution(bestSolution->getSolution(), dataFrame) << "\t"
                 << setw(6) << elapsedSecs << "\n";
+
+    if(RUN_TESTS) {
+        Test* test = new Test(bestSolution);
+        test->run();
+    }
+}*/
+
+void printSummary(Solver* bestSolution, double elapsedSecs) {
+    
+    DataFrame* dataFrame = bestSolution->getDataFrame();
+    
+    printSolution(bestSolution->getSolution(), dataFrame->getInstance().N);
+
+    cout << endl << ">> Summary of results:" << endl;
+
+    /*cout << left << dataFrame->getInstance().file << "\t"
+                << dataFrame->getInstance().N << "\t"
+                << dataFrame->getInstance().M << "\t"
+                << bestSolution->getSolverId() << "\t"
+                << bestSolution->getCost() << "\t"
+                << evalSolution(bestSolution->getSolution(), dataFrame) << "\t"
+                << elapsedSecs << " s\n";*/
+
+    printf("%s\t", dataFrame->getInstance().file.c_str());
+    printf("%d\t", dataFrame->getInstance().N);
+    printf("%d\t", dataFrame->getInstance().M);
+    printf("%s\t", bestSolution->getSolverId().c_str());
+    printf("%.4f\t", bestSolution->getCost());
+    printf("%.4f\t", evalSolution(bestSolution->getSolution(), dataFrame));
+    printf("%.4f\n", elapsedSecs);
 
     if(RUN_TESTS) {
         Test* test = new Test(bestSolution);
@@ -563,25 +593,34 @@ vector<Solver*> selectSurvivors(HeapPdi* costHeap,
     int id;
     HeapPdi* heapInd = new HeapPdi();
     HeapPdi* heapClones = new HeapPdi(); 
-    int* cardinality = new int[m];
+
+    //Add the best solution
+    int topId = costHeap->front_min().second;
+    double topCost = costHeap->front_min().first;
+    Item * anItem = new Item;
+    (*anItem).cost = topCost;
+    (*anItem).cardinality = population[topId]->getCardinality();
+    (*anItem).next = NULL;
+    table->insertItem(anItem, m);
+    heapInd->push_max(topCost, topId);
 
     for(int i = 0; i < maxPopulation; i++) {
-        getCardinality(cardinality, population[i]->getSolution(), n, m);
-
-        /*Check if solution already exist in population (clone detection)*/
-        if(table->existItem(cardinality, population[i]->getCost(), m)) {
-            heapClones->push_max(population[i]->getCost(), i);
-        } else {
-            Item * anItem = new Item;
-            (*anItem).cost = population[i]->getCost();
-            (*anItem).cardinality = cardinality;
-            (*anItem).next = NULL;
-            table->insertItem(anItem, m);
-            heapInd->push_max(population[i]->getCost(), i);
+        if(i != topId) {
+            int* cardinality = population[i]->getCardinality();
+            /*Check if solution already exist in population (clone detection)*/
+            if(table->existItem(cardinality, population[i]->getCost(), m)) {
+                heapClones->push_max(population[i]->getCost(), i);
+            } else {
+                Item * anItem = new Item;
+                (*anItem).cost = population[i]->getCost();
+                (*anItem).cardinality = cardinality;
+                (*anItem).next = NULL;
+                table->insertItem(anItem, m);
+                heapInd->push_max(population[i]->getCost(), i);
+            }    
         }
         discarded[i] = 0;
     }
-    delete [] cardinality;
     int j = 0;
     
     /*Remove clones while they exist*/
@@ -808,7 +847,7 @@ void demo(int seed, string fileName, int k) {
             off1->localSearch(conflictGraph);
 
             /*Stores offspring if it is better than the best solution found so far*/
-            if(off1->getCost() < bestSolution->getCost()-EPS) {
+            if(off1->getCost() < bestSolution->getCost()) {
                 bestSolution = off1;
                 lastImprovement = it;
             }
@@ -819,7 +858,7 @@ void demo(int seed, string fileName, int k) {
             Solver* off2 = createSolver(dataFrame, offspring2);
             //off2->localSearch(conflictGraph);
 
-            if(off2->getCost() < bestSolution->getCost()-EPS) {
+            if(off2->getCost() < bestSolution->getCost()) {
                 bestSolution = off2;
                 lastImprovement = it;
             }
@@ -834,15 +873,17 @@ void demo(int seed, string fileName, int k) {
 
             /*If the size of population achieves $maxPopulation, then select survivors*/
             if(population.size() > maxPopulation) {
+                printf("----- survivors selection\n");
                 population = selectSurvivors(costHeap, population, sizePopulation, dataFrame);
-                bestSolution = population[costHeap->front_min().second];
+                //bestSolution = population[costHeap->front_min().second];
             }
 
             /*If $itDiv iterations happened without improving the best solution, then diversify population*/ 
             if( ((it-lastImprovement) >= itDiv) && ((it-lastDiv) >= itDiv) ) {
+                printf("----- diversification\n");
                 lastDiv = it;
                 population = diversifyPopulation(costHeap, population, sizePopulation, 2*sizePopulation, m, dataFrame, conflictGraph);
-                if(costHeap->front_min().first < bestSolution->getCost()-EPS) {
+                if(costHeap->front_min().first < bestSolution->getCost()) {
                     lastImprovement = it;
                 }
                 bestSolution = population[costHeap->front_min().second];
