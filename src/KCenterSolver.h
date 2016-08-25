@@ -65,10 +65,10 @@ class KCenterSolver: public Solver {
 		virtual void swap(int p1, int p2) = 0;
 
 		/*Get the solution cost after a relocate move*/
-		double getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2);
+		virtual double getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2);
 		
 		/*Get the solution cost after a swap move*/ 
-		double getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2);
+		virtual double getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2);
 		
 		/*Calculate solution cost from scratch*/
 		void calculateCost();

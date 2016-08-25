@@ -62,6 +62,11 @@ double KMedoidsSolver::getMedian(std::vector<int> cl, int j) {
 	return median;
 }
 
+void KMedoidsSolver::updateContribs(int c1, int c2) {
+	this->contrib[c1] = this->contrib1;
+	this->contrib[c2] = this->contrib2;
+}
+
 /*Update clusters for relocate move. It removes point p from cluster c1 and add it to c2*/
 void KMedoidsSolver::updateClusters(int p, int c1, int c2) {
 	int q = 0;
@@ -75,8 +80,11 @@ void KMedoidsSolver::updateClusters(int p, int c1, int c2) {
 	this->clusters[c2].push_back(p);
 	this->clusters[c1].erase(this->clusters[c1].begin() + q);
 
-	delete [] this->sumDist;
-	setDistances();
+	this->sumDist[c1].resize(this->clusters[c1].size());
+	this->sumDist[c2].resize(this->clusters[c2].size());
+
+	updateContribs(c1, c2);
+	setDistances(c1, c2);
 }
 
 /*Update clusters for swap move. It adds point p1 to c2 and p2 to c1*/
@@ -99,47 +107,51 @@ void KMedoidsSolver::updateClusters(int p1, int p2, int c1, int c2) {
 	this->clusters[c1][q1] = p2;
 	this->clusters[c2][q2] = p1;
 
-	delete [] this->sumDist;
-	setDistances();
+	updateContribs(c1, c2);
+	setDistances(c1, c2);
 }
 
 /*Set the centroids. Given a solution, it calculates the centroids (medoid points within each cluster)*/
 void KMedoidsSolver::createCenters() {
-	int N = this->dataFrame->getInstance().N;
-	int M = this->dataFrame->getInstance().M;
-	int D = this->dataFrame->getInstance().D;
-	double** data = this->dataFrame->getData();
+	int n = this->dataFrame->getInstance().N;
+	int m = this->dataFrame->getInstance().M;
+	int d = this->dataFrame->getInstance().D;
 
-	int* centers = new int[M];
-	this->centroid = new double*[M];
-	this->clusters = new vector<int>[M];
-	this->cardinality = new int[M];
+	double** data = this->dataFrame->getData();
+	double** sim = this->dataFrame->getSim();
+
+	//int* centers = new int[m];
+	this->centroid = new double*[m];
+	this->clusters = new vector<int>[m];
+	this->cardinality = new int[m];
+	this->contrib = new double[m];
 
 	double min;
 	double dist;
 
-	for(int i = 0; i < M; i++) {
-		this->centroid[i] = new double[D];
+	for(int i = 0; i < m; i++) {
+		this->centroid[i] = new double[d];
 		this->cardinality[i] = 0;
+		this->contrib[i] = 0.0;
 	}
 
-	for(int i = 0; i < N; i++) {
+	for(int i = 0; i < n; i++) {
 		this->cardinality[solution[i]]++;
 		this->clusters[solution[i]].push_back(i);
 	}
 
-	for(int i = 0; i < M; i++) {
-		for(int j = 0; j < D; j++) {
+	/*for(int i = 0; i < m; i++) {
+		for(int j = 0; j < d; j++) {
 			this->centroid[i][j] = getMedian(this->clusters[i], j);
 		}
 	}
 	
-	for(int i = 0; i < M; i++) {
+	for(int i = 0; i < m; i++) {
 		min = MAX_FLOAT;
 		
-		/*Setting the real centroid as the closest point to the artificial centroid calculated above*/
+		//Setting the real centroid as the closest point to the artificial centroid calculated above
 		for(int k = 0; k < this->clusters[i].size(); k++) {
-			dist = getDistance(data[this->clusters[i][k]], centroid[i], D);
+			dist = getDistance(data[this->clusters[i][k]], centroid[i], d);
 			if(dist < min) {
 				min = dist;
 				centers[i] = this->clusters[i][k];
@@ -147,22 +159,61 @@ void KMedoidsSolver::createCenters() {
 		}
 	}
 
-	for(int i = 0; i < M; i++) {
-		for(int j = 0; j < D; j++) {
+	for(int i = 0; i < m; i++) {
+		for(int j = 0; j < d; j++) {
 			this->centroid[i][j] = data[centers[i]][j];
 		}
-	}
+	}*/
 
 	setDistances();
 
-	delete [] centers;
+	int* bestMedoid = new int[m];
+
+	for(int i = 0; i < m; i++) {
+		min = MAX_FLOAT;
+		for(int j = 0; j < this->clusters[i].size(); j++) {
+			if(this->sumDist[i][j] < min) {
+				bestMedoid[i] = this->clusters[i][j];
+				min = this->sumDist[i][j];
+			}
+		}
+		for(int k = 0; k < d; k++) {
+			this->centroid[i][k] = data[bestMedoid[i]][k];
+		}
+	}
+
+	int c;
+	for(int i = 0; i < n; i++) {
+		c = this->solution[i];
+		this->contrib[c] = this->contrib[c] + sim[i][bestMedoid[c]];
+	}
+
+	delete [] bestMedoid;
+
+	//delete [] centers;
 }
 
+/*//Get contrib of a point p in a new cluster c
+double foo(int p, int c) {
+	double contrib = 0.0;
+	for(int i = 0; i < this->clusters[c].size(); i++) {
+		contrib = contrib + sim[p][this->clusters[c][i]];
+	}
+}
+
+double foo0(int p) {
+	int c = this->solution[p];
+	for(int i = 0; i < clusters[c].size(); i++) {
+		if(p == clusters[c][i]) {
+			return this->sumDist[c][i];
+		}
+	}
+	return 0.0;
+}*/
+
 void KMedoidsSolver::setDistances() {
-	int n = this->dataFrame->getInstance().N;
 	int m = this->dataFrame->getInstance().M;
 	int d = this->dataFrame->getInstance().D;
-	double** data = this->dataFrame->getData();
 	double** sim = this->dataFrame->getSim();
 	double sum = 0.0;
 
@@ -177,7 +228,27 @@ void KMedoidsSolver::setDistances() {
 			this->sumDist[i].push_back(sum);
 		}
 	}
+}
 
+void KMedoidsSolver::setDistances(int c1, int c2) {
+	double** sim = this->dataFrame->getSim();
+	double sum = 0.0;
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		sum = 0.0;
+		for(int j = 0; j < this->clusters[c1].size(); j++) {
+			sum = sum + sim[this->clusters[c1][i]][this->clusters[c1][j]];
+		}
+		this->sumDist[c1][i] = sum;
+	}
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		sum = 0.0;
+		for(int j = 0; j < this->clusters[c2].size(); j++) {
+			sum = sum + sim[this->clusters[c2][i]][this->clusters[c2][j]];
+		}
+		this->sumDist[c2][i] = sum;
+	}
 }
 
 void KMedoidsSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {
@@ -233,6 +304,7 @@ void KMedoidsSolver::relocate(int p, int c2) {
 	int d = this->dataFrame->getInstance().D;
 	int c1 = this->solution[p];
 	double** data = this->dataFrame->getData();
+	double** sim = this->dataFrame->getSim();
 
 	this->cardinality[c1] = this->cardinality[c1] - 1;
 	this->cardinality[c2] = this->cardinality[c2] + 1;
@@ -491,4 +563,55 @@ double KMedoidsSolver::verifyCost() {
 	delete [] centers;
 
 	return cst;
+}
+
+/*Get the solution cost after a relocate move*/
+double KMedoidsSolver::getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2) {
+	int c1 = this->solution[p];
+	double** sim = this->dataFrame->getSim();
+
+	this->contrib1 = 0.0;
+	this->contrib2 = 0.0;
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		this->contrib1 = this->contrib1 + sim[bestMedoid1][clusters[c1][i]];
+	}
+	this->contrib1 = this->contrib1 - sim[bestMedoid1][p];
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		this->contrib2 = this->contrib2 + sim[bestMedoid2][clusters[c2][i]];
+	}
+	this->contrib2 = this->contrib2 + sim[bestMedoid2][p];
+
+	double c = 0.0;
+
+	c = this->cost - this->contrib[c1] - this->contrib[c2] + this->contrib1 + this->contrib2;
+
+	return c;
+}
+
+double KMedoidsSolver::getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2) {
+	int c1 = this->solution[p1];
+	int c2 = this->solution[p2];
+
+	double** sim = this->dataFrame->getSim();
+
+	this->contrib1 = 0.0;
+	this->contrib2 = 0.0;
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		this->contrib1 = this->contrib1 + sim[bestMedoid1][clusters[c1][i]];
+	}
+	this->contrib1 = this->contrib1 - sim[bestMedoid1][p1] + sim[bestMedoid1][p2];
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		this->contrib2 = this->contrib2 + sim[bestMedoid2][clusters[c2][i]];
+	}
+	this->contrib2 = this->contrib2 - sim[bestMedoid2][p2] + sim[bestMedoid2][p1];
+
+	double c = 0.0;
+
+	c = this->cost - this->contrib[c1] - this->contrib[c2] + this->contrib1 + this->contrib2;
+
+	return c;
 }

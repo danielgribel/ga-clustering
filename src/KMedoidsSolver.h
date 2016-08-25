@@ -30,11 +30,20 @@ class KMedoidsSolver: public KCenterSolver {
 		/*For each data point $x, the sum of distances from each data point inside the cluster to $x*/
 		std::vector<double>* sumDist;
 
+		/*The contribution given by each cluster to the overall cost*/
+		double* contrib;
+
 		int bestMedoid1;
 		
 		int bestMedoid2;
 
+		double contrib1;
+		
+		double contrib2;
+
 		void setDistances();
+
+		void setDistances(int c1, int c2);
 
 	public:
 
@@ -83,6 +92,12 @@ class KMedoidsSolver: public KCenterSolver {
 		/*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
 		best solution found is correct*/
 		double verifyCost();
+
+		void updateContribs(int c1, int c2);
+
+		double getRelocateCost(int p, int c2, double* newCentroid1, double* newCentroid2);
+
+		double getSwapCost(int p1, int p2, double* newCentroid1, double* newCentroid2);
 };
 
 #endif

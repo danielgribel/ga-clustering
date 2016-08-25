@@ -72,6 +72,8 @@ bool accuracy = false;
 /*Max value for a float numer (used as infinite)*/
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
+#define EPS              (0.00000001)
+
 /*The porcentage of items used as training set -- Used only for classification purpose*/
 const double PORC_ANNOTATED = 0.0;
 
@@ -806,7 +808,7 @@ void demo(int seed, string fileName, int k) {
             off1->localSearch(conflictGraph);
 
             /*Stores offspring if it is better than the best solution found so far*/
-            if(off1->getCost() < bestSolution->getCost()) {
+            if(off1->getCost() < bestSolution->getCost()-EPS) {
                 bestSolution = off1;
                 lastImprovement = it;
             }
@@ -817,7 +819,7 @@ void demo(int seed, string fileName, int k) {
             Solver* off2 = createSolver(dataFrame, offspring2);
             //off2->localSearch(conflictGraph);
 
-            if(off2->getCost() < bestSolution->getCost()) {
+            if(off2->getCost() < bestSolution->getCost()-EPS) {
                 bestSolution = off2;
                 lastImprovement = it;
             }
@@ -840,7 +842,7 @@ void demo(int seed, string fileName, int k) {
             if( ((it-lastImprovement) >= itDiv) && ((it-lastDiv) >= itDiv) ) {
                 lastDiv = it;
                 population = diversifyPopulation(costHeap, population, sizePopulation, 2*sizePopulation, m, dataFrame, conflictGraph);
-                if(costHeap->front_min().first < bestSolution->getCost()) {
+                if(costHeap->front_min().first < bestSolution->getCost()-EPS) {
                     lastImprovement = it;
                 }
                 bestSolution = population[costHeap->front_min().second];

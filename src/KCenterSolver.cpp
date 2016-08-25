@@ -26,6 +26,8 @@ using namespace std;
 
 const double MAX_FLOAT = std::numeric_limits<double>::max();
 
+#define EPS              (0.00000001)
+
 /*KCenterSolver constructor*/
 KCenterSolver::KCenterSolver(DataFrame* dataFrame, int* solution, std::string solverId) {
 	setDataFrame(dataFrame);
@@ -98,7 +100,7 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 
 					/*If the cost of the solution obtained by applying the relocate move is less than the
 					cost of the curent solution, then perform the relocate move and update the current solution*/
-					if(newcost < this->cost) {
+					if(newcost < this->cost-EPS) {
 						relocate(i, k); // O(d) --> KMeans
 						this->solution[i] = k;
 						this->cost = newcost;
@@ -122,7 +124,7 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 					
 					/*If the cost of the solution obtained by applying the swap move is less than the
 					cost of the curent solution, then perform the swap move and update the current solution*/ 	
-					if(newcost < this->cost) {
+					if(newcost < this->cost-EPS) {
 						swap(i, closest[j]);
 						this->solution[i] = clusterJ;
 						this->solution[closest[j]] = clusterI;
