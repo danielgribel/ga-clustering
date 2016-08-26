@@ -32,7 +32,11 @@ KMeansSolver::KMeansSolver(DataFrame* dataFrame, int* solution, string solverId)
 
 /*KCenterSolver destructor*/
 KMeansSolver::~KMeansSolver() {
-
+	/*int m = this->dataFrame->getInstance().M;
+	for(int i = 0; i < m; i++) {
+		delete [] this->sumFeatures[i];
+	}
+	delete [] this->sumFeatures;*/
 }
 
 /*Get the sum of each feature in each cluster */

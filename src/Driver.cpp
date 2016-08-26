@@ -148,6 +148,7 @@ void printSummary(Solver* bestSolution, double elapsedSecs) {
     if(RUN_TESTS) {
         Test* test = new Test(bestSolution);
         test->run();
+        delete test;
     }
 }
 

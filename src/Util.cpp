@@ -93,7 +93,7 @@ double euclidean(double* a, double* b, int d) {
 /*Calculate the distance between two points a and b, given the number of dimensions d
 This function call the specific distance implementation (Manhattan, Euclidean, Sum of squares, etc)*/
 double getDistance(double* a, double* b, int d) {
-    return sumSquare(a, b, d); 
+    return euclidean(a, b, d); 
 }
 
 /*Given an array myArray, return the k largest elements*/

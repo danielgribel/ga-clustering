@@ -41,6 +41,10 @@ class Solver {
 		std::string solverId;
 
 	public:
+
+		Solver();
+
+		~Solver();
 		
 		/*Get the current solution the solver is working with*/
 		int* getSolution() { return this->solution; };

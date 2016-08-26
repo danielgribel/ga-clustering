@@ -38,26 +38,6 @@ std::vector<int>* KMedoidsSolver::getClusters() const {
 	return this->clusters;
 }
 
-/*Given the j-th cluster, get the median point, i.e., the median point for each feature,
-which leads to a point that may not be a representative*/
-double KMedoidsSolver::getMedian(std::vector<int> cl, int j) {
-	const int clusterSize = cl.size();
-	double values[clusterSize];
-	double** data = this->dataFrame->getData();
-	
-	for(int i = 0; i < clusterSize; i++) {
-		values[i] = data[cl[i]][j];
-	}
-
-	int pos = clusterSize/2;
-
-	nth_element(values, values + pos, values + clusterSize);
-	double median = values[pos];
-	
-	return median;
-}
-
-
 /*Set the centroids. Given a solution, it calculates the centroids (medoid points within each cluster)*/
 void KMedoidsSolver::createCenters() {
 	int n = this->dataFrame->getInstance().N;
@@ -149,7 +129,7 @@ void KMedoidsSolver::setDistances() {
 	}
 }
 
-void KMedoidsSolver::setDistances(int c1, int c2) {
+/*void KMedoidsSolver::setDistances(int c1, int c2) {
 	double** sim = this->dataFrame->getSim();
 	double sum = 0.0;
 
@@ -168,6 +148,62 @@ void KMedoidsSolver::setDistances(int c1, int c2) {
 		}
 		this->sumDist[c2][i] = sum;
 	}
+}*/
+
+/*Update sumDist when performing relocate move*/
+void KMedoidsSolver::setDistances(int q, int p, int c1, int c2) {
+	double** sim = this->dataFrame->getSim();
+
+	for(int i = 0; i < q; i++) {
+		this->sumDist[c1][i] = this->sumDist[c1][i] - sim[this->clusters[c1][i]][p];
+	}
+
+	for(int i = q; i < this->sumDist[c1].size() - 1; i++) {
+		this->sumDist[c1][i] = this->sumDist[c1][i+1] - sim[this->clusters[c1][i]][p];
+	}
+
+	int c1LastPosition = this->sumDist[c1].size() - 1;
+
+	this->sumDist[c1].erase(this->sumDist[c1].begin() + c1LastPosition);
+
+	double sum = 0.0;
+
+	for(int i = 0; i < this->sumDist[c2].size(); i++) {
+		this->sumDist[c2][i] = this->sumDist[c2][i] + sim[this->clusters[c2][i]][p];
+		sum = sum + sim[this->clusters[c2][i]][p];
+	}
+
+	this->sumDist[c2].push_back(sum);
+}
+
+/*Update sumDist when performing swap move*/
+void KMedoidsSolver::setDistances(int q1, int q2, int p1, int p2, int c1, int c2) {
+	double** sim = this->dataFrame->getSim();
+	this->sumDist[c1][q1] = 0.0;
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		this->sumDist[c1][q1] = this->sumDist[c1][q1] + sim[p2][this->clusters[c1][i]];
+	}
+
+	for(int i = 0; i < this->clusters[c1].size(); i++) {
+		if(i != q1) {
+			this->sumDist[c1][i] = this->sumDist[c1][i] - sim[p1][this->clusters[c1][i]] + sim[p2][this->clusters[c1][i]];	
+		}
+	}
+
+	// the same for c2
+	this->sumDist[c2][q2] = 0.0;
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		this->sumDist[c2][q2] = this->sumDist[c2][q2] + sim[p1][this->clusters[c2][i]];
+	}
+
+	for(int i = 0; i < this->clusters[c2].size(); i++) {
+		if(i != q2) {
+			this->sumDist[c2][i] = this->sumDist[c2][i] - sim[p2][this->clusters[c2][i]] + sim[p1][this->clusters[c2][i]];	
+		}
+	}
+
 }
 
 void KMedoidsSolver::updateContribs(int c1, int c2) {
@@ -188,11 +224,12 @@ void KMedoidsSolver::updateClusters(int p, int c1, int c2) {
 	this->clusters[c2].push_back(p);
 	this->clusters[c1].erase(this->clusters[c1].begin() + q);
 
-	this->sumDist[c1].resize(this->clusters[c1].size());
-	this->sumDist[c2].resize(this->clusters[c2].size());
+	// here we should not discard
+	//this->sumDist[c1].resize(this->clusters[c1].size());
+	//this->sumDist[c2].resize(this->clusters[c2].size());
 
 	updateContribs(c1, c2);
-	setDistances(c1, c2);
+	setDistances(q, p, c1, c2);
 }
 
 /*Update clusters for swap move. It adds point p1 to c2 and p2 to c1*/
@@ -216,7 +253,7 @@ void KMedoidsSolver::updateClusters(int p1, int p2, int c1, int c2) {
 	this->clusters[c2][q2] = p1;
 
 	updateContribs(c1, c2);
-	setDistances(c1, c2);
+	setDistances(q1, q2, p1, p2, c1, c2);
 }
 
 void KMedoidsSolver::updateCentroidsRelocate(int p, int c2, double* newCentroid1, double* newCentroid2) {

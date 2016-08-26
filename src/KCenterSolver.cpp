@@ -35,7 +35,11 @@ KCenterSolver::KCenterSolver(DataFrame* dataFrame, int* solution, std::string so
 
 /*KCenterSolver destructor*/
 KCenterSolver::~KCenterSolver() {
-
+	/*int m = this->dataFrame->getInstance().M;
+	for(int i = 0; i < m; i++) {
+		delete [] this->centroid[i];
+	}
+	delete [] this->centroid;*/
 }
 
 /*Get the list of centroids*/
@@ -55,13 +59,15 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 	bool improvingSolution = true;
 	double newcost;
 	int prev = 0;
-	int arr[n];
 	int i;
-	int modifiedClusters[m];
-	int modifiedClusters2[m];
 
-	double newCentroid1[d];
-	double newCentroid2[d];
+	int* arr = new int[n];
+
+	int* modifiedClusters = new int[m];
+	int* modifiedClusters2 = new int[m];
+
+	double* newCentroid1 = new double[d];
+	double* newCentroid2 = new double[d];
 
 	int clusterI;
 	int clusterJ;
@@ -140,6 +146,12 @@ void KCenterSolver::localSearch(std::vector<int>* conflictGraph) {
 		}
 		it++;
 	}
+
+	delete [] arr;
+	delete [] modifiedClusters;
+	delete [] modifiedClusters2;
+	delete [] newCentroid1;
+	delete [] newCentroid2;
 }
 
 /*Get the solution cost after a relocate move*/

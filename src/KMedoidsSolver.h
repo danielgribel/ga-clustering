@@ -43,7 +43,11 @@ class KMedoidsSolver: public KCenterSolver {
 
 		void setDistances();
 
-		void setDistances(int c1, int c2);
+		//void setDistances(int c1, int c2);
+
+		void setDistances(int q, int p, int c1, int c2);
+
+		void setDistances(int q1, int q2, int p1, int p2, int c1, int c2);
 
 	public:
 

@@ -21,6 +21,11 @@ Test::Test(Solver* asolution) {
 	this->delta = 0.00001;
 }
 
+/*Test destructor*/
+Test::~Test() {
+
+}
+
 /*Verify the cost of a solution from scratch -- Useful for testing if the generated cost for the
 best solution found is correct*/
 bool Test::verifyCost() {

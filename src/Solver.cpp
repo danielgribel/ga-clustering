@@ -13,6 +13,19 @@ stores a solution, its cost, and the cardinality of each cluster (group) of the 
 
 #include "Solver.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+
+Solver::Solver() {
+
+}
+
+Solver::~Solver() {
+	/*delete [] this->solution;
+	delete [] this->cardinality;*/
+}
+
 /*Set a new solution*/
 void Solver::setSolution(int* newSolution) {
 	this->solution = newSolution;
