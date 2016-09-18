@@ -479,6 +479,27 @@ bool allClustersPopulated(int* solution, int n, int m) {
     return true;
 }
 
+/*Generate a random solution that assures that all clusters have been populated*/
+void generateRandomPopulatedSolution(int* offspring1, const DataFrame* dataFrame) {
+    const int n = dataFrame->getInstance().N;
+    const int m = dataFrame->getInstance().M;
+    const int d = dataFrame->getInstance().D;
+
+    int* listClusters = new int[m];
+
+    shuffle(listClusters, m);
+
+    for(int i = 0; i < m; i++) {
+        offspring1[i] = listClusters[i];
+    }
+
+    for(int i = m; i < n; i++) {
+        offspring1[i] = rand() % m;
+    }
+
+    delete [] listClusters;
+}
+
 /*Crossover: For each centroid of the offspring, we chose a random centroid among the centroids of the 2 parents*/
 void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
     const int n = dataFrame->getInstance().N;
@@ -499,6 +520,7 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
     std::vector<long> matching = minAssignment(matrix, m);
 
     int r;
+    int cont = 0;
 
     bool validOffspring = false;
 
@@ -517,7 +539,12 @@ void crossover(int* offspring1, int* p1, int* p2, const DataFrame* dataFrame) {
         }
         centroidsToSolution(offspring1, c3, dataFrame);
         validOffspring = allClustersPopulated(offspring1, n, m);
-        /*std::cout << "validOffspring = " << validOffspring << std::endl;*/
+        //std::cout << "validOffspring = " << validOffspring << std::endl;
+        cont++;
+        if(cont > 10) {
+            generateRandomPopulatedSolution(offspring1, dataFrame);
+            validOffspring = allClustersPopulated(offspring1, n, m);
+        }
     }
 
     deleteMatrix(c1, m);
